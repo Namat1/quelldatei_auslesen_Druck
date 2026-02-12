@@ -1,10 +1,10 @@
 # app.py
 # ------------------------------------------------------------
-# Excel -> 1 Standalone-HTML (Suche + A4 Druck, 1 Seite pro Kunde)
+# Excel -> Standalone-HTML (Suche + A4 Druck, 1 Seite pro Kunde)
 # WICHTIG:
-# - Es wird NICHTS gefiltert (nur komplett leere Datensätze übersprungen).
-# - Pro Kunde GENAU 1 A4: Schriftgröße wird automatisch reduziert bis es passt.
-# - Druckstabil: @page margin 0, .paper = 210mm x 297mm, page-break immer.
+# - Es wird NICHTS gefiltert (nur komplett leere Datensätze werden übersprungen).
+# - Pro Kunde GENAU 1×A4: Schriftgröße wird automatisch reduziert bis es passt.
+# - Deutsche See & alle anderen Sortimente zählen für die Wochentage (Liefertag-Zeile).
 # ------------------------------------------------------------
 
 import json
@@ -179,12 +179,8 @@ def normalize_time(s: str) -> str:
 
 
 # -----------------------------
-# DRUCKSTABILES HTML TEMPLATE
-# - Paper = echtes A4 (210x297mm)
-# - @page margin 0
-# - inner padding = Druckrand
-# - AutoFit reduziert Schrift bis es passt (kein transform scale)
-# - page-break-after immer
+# DRUCKSTABILES HTML TEMPLATE (Auto-Fit via Schriftgröße)
+# + Wochentage aus Bestellzeilen inkl. Deutsche See
 # -----------------------------
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
@@ -217,7 +213,6 @@ HTML_TEMPLATE = """<!doctype html>
     color:var(--text);
   }
 
-  /* UI */
   .app{ display:grid; grid-template-columns: 340px 1fr; gap:14px; padding:14px; }
   .sidebar,.main{
     background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.06));
@@ -329,7 +324,6 @@ HTML_TEMPLATE = """<!doctype html>
   .dsh{ background:#f3f6fb; padding:6px 8px; font-weight:1000; }
   .dsb{ padding:6px 8px; }
 
-  /* Print */
   @media print{
     body{ background:#fff; }
     .sidebar,.mainhead{ display:none !important; }
@@ -356,7 +350,7 @@ HTML_TEMPLATE = """<!doctype html>
   <div class="sidebar">
     <div class="sidehead">
       <div class="t">Sende- & Belieferungsplan</div>
-      <div class="s">Pro Kunde genau 1×A4. Auto-Fit reduziert Schrift, bis alles passt.</div>
+      <div class="s">Deutsche See ist in den Wochentagen integriert (Tage kommen aus Bestellzeilen).</div>
     </div>
     <div class="controls">
       <div class="field">
@@ -392,6 +386,7 @@ HTML_TEMPLATE = """<!doctype html>
 <script>
 const DATA = __DATA_JSON__;
 const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
+const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 function esc(s){
   return String(s ?? "")
@@ -400,22 +395,30 @@ function esc(s){
     .replaceAll(">","&gt;");
 }
 
+/* Wochentage: aus Bestellzeilen (Sortiment vorhanden => Tag aktiv) + optional Touren */
 function buildActiveDays(c){
-  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
-  const fromBestell = new Set((c.bestell||[]).map(x=>x.liefertag).filter(Boolean));
-  const fromTours = new Set(days.filter(d => (c.tours && String(c.tours[d]||"").trim()!=="")));
-  return days.filter(d => fromBestell.has(d) || fromTours.has(d));
+  const fromBestell = new Set();
+  for(const it of (c.bestell || [])){
+    const d = String(it.liefertag || "").trim();
+    const s = String(it.sortiment || "").trim();
+    const t = String(it.bestelltag || "").trim();
+    const z = String(it.bestellschluss || "").trim();
+    if(d && DAYS.includes(d) && (s || t || z)){
+      fromBestell.add(d);
+    }
+  }
+  const fromTours = new Set(DAYS.filter(d => (c.tours && String(c.tours[d]||"").trim() !== "")));
+  return DAYS.filter(d => fromBestell.has(d) || fromTours.has(d));
 }
 
 function render(c){
-  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
   const byDay = {};
   for(const it of (c.bestell||[])){
     if(!byDay[it.liefertag]) byDay[it.liefertag]=[];
     byDay[it.liefertag].push(it);
   }
 
-  const rows = days.map(d=>{
+  const rows = DAYS.map(d=>{
     const arr = byDay[d] || [];
     const s = arr.map(x=>esc(x.sortiment)).join("<br>");
     const t = arr.map(x=>esc(x.bestelltag)).join("<br>");
@@ -495,11 +498,10 @@ function autoFitPaper(paper){
   const inner = paper.querySelector(".inner");
   if(!inner) return;
 
-  let fs = 10.4;           // Start (pt)
-  const minFs = 6.8;       // Untergrenze
+  let fs = 10.4;
+  const minFs = 6.8;
   paper.style.setProperty("--fs", fs + "pt");
 
-  // Mehrfach messen (Layout settle)
   for(let pass=0; pass<3; pass++){
     while(inner.scrollHeight > paper.clientHeight && fs > minFs){
       fs -= 0.2;
@@ -571,10 +573,8 @@ document.getElementById("knr").addEventListener("keydown",(e)=>{
 document.getElementById("cnt").textContent = ORDER.length;
 buildList();
 
-/* WICHTIG: vor dem Drucken nochmal Auto-Fit (Druck-Layout kann abweichen) */
-window.addEventListener("beforeprint", () => {
-  autoFitAll();
-});
+/* vor dem Drucken nochmal Auto-Fit */
+window.addEventListener("beforeprint", () => { autoFitAll(); });
 </script>
 </body>
 </html>
@@ -585,7 +585,7 @@ window.addEventListener("beforeprint", () => {
 # Streamlit Generator
 # -----------------------------
 st.set_page_config(page_title="Excel → A4-Druckvorlage", layout="wide")
-st.title("Excel → HTML (Auto-Fit: garantiert 1×A4 pro Kunde)")
+st.title("Excel → HTML (Auto-Fit: 1×A4 pro Kunde, Deutsche See in Wochentagen)")
 
 up = st.file_uploader("Excel (.xlsx) hochladen", type=["xlsx"])
 if not up:
@@ -623,7 +623,7 @@ for _, r in df.iterrows():
 
     bestell = []
 
-    # B_-Spalten
+    # 1) B_-Spalten
     for day_de in DAYS_DE:
         keys = [k for k in bmap.keys() if k[0] == day_de]
         keys.sort(key=lambda k: (group_sort_key(k[1]), DAYS_DE.index(k[2]) if k[2] in DAYS_DE else 99))
@@ -631,7 +631,6 @@ for _, r in df.iterrows():
             cols = bmap[(lday, group, bestelltag)]
             sortiment = norm(r.get(cols.get("sort", ""), ""))
             zeit = normalize_time(r.get(cols.get("zeit", ""), ""))
-            # nur komplett leere Datensätze skippen
             if not (sortiment or zeit or bestelltag):
                 continue
             bestell.append({
@@ -641,7 +640,7 @@ for _, r in df.iterrows():
                 "bestellschluss": zeit
             })
 
-    # Tripel
+    # 2) Tripel
     for day_de in DAYS_DE:
         for g in sorted(trip.get(day_de, {}).keys(), key=group_sort_key):
             cols = trip[day_de][g]
@@ -657,7 +656,7 @@ for _, r in df.iterrows():
                 "bestellschluss": zeit
             })
 
-    # DS
+    # 3) DS
     ds_list = []
     for ds_key, cols in dsmap.items():
         zeit = normalize_time(r.get(cols["Zeit"], ""))
@@ -688,15 +687,15 @@ for _, r in df.iterrows():
         "ds": ds_list,
     }
 
-st.success(f"{len(data)} Kunden eingebettet. Auto-Fit (Schrift) erzwingt 1×A4 pro Kunde.")
+st.success(f"{len(data)} Kunden eingebettet. Wochentage kommen aus Bestellzeilen (inkl. Deutsche See).")
 
 html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False))
 
 st.download_button(
-    "⬇️ Standalone-HTML herunterladen (A4 safe)",
+    "⬇️ Standalone-HTML herunterladen (A4 safe + Deutsche See in Tagen)",
     data=html.encode("utf-8"),
-    file_name="sende_belieferungsplan_A4_safe.html",
+    file_name="sende_belieferungsplan_A4_safe_deutschesee.html",
     mime="text/html",
 )
 
-st.caption("Druck-Tipp: Im Browser A4 wählen. Browser-Margins sind egal (wir nutzen @page margin 0). Auto-Fit läuft auch vor dem Drucken.")
+st.caption("Druck-Tipp: A4 auswählen. Auto-Fit läuft auch vor dem Drucken und erzwingt 1 Seite.")
