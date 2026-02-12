@@ -328,6 +328,9 @@ HTML_TEMPLATE = """<!doctype html>
       overflow: visible;
       page-break-after: always;
       background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
     }
     
     .paper-content{
@@ -335,6 +338,45 @@ HTML_TEMPLATE = """<!doctype html>
       height: auto;
       padding: 0;
       margin: 0;
+    }
+    
+    /* WICHTIG: Erzwinge schwarze Farben beim Drucken */
+    .paper-content, .paper-content * {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    
+    /* Tabellen-Borders schwarz */
+    table, th, td {
+      border-color: #000 !important;
+    }
+    
+    /* Hintergrundfarben beibehalten */
+    .day-header {
+      background: #e0e0e0 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    .tour-table th {
+      background: #eee !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    .main-table th {
+      background: #f2f2f2 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    /* Roter Titel bleibt rot */
+    .pstd {
+      color: #d0192b !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
   }
 
@@ -379,8 +421,9 @@ HTML_TEMPLATE = """<!doctype html>
     <div style="padding:15px; font-weight:bold;">Sendeplan Generator</div>
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
       <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:10px; border-radius:5px;">
-      <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer;">Anzeigen</button>
-      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer;">Drucken</button>
+      <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; border-radius:5px;">Anzeigen</button>
+      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer; border-radius:5px;">Drucken</button>
+      <button onclick="printAll()" style="padding:10px; background:#ff6b35; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:5px;">Alle drucken</button>
     </div>
     <div class="list" id="list"></div>
   </div>
@@ -448,6 +491,30 @@ function showOne(){
   if(DATA[k]) {
     document.getElementById("out").innerHTML = render(DATA[k]);
   }
+}
+
+function printAll(){
+  // Bestätigungsdialog
+  const count = ORDER.length;
+  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden drucken?`)) {
+    return;
+  }
+  
+  // Rendere alle Kunden
+  let html = "";
+  ORDER.forEach(k => {
+    if(DATA[k]) {
+      html += render(DATA[k]);
+    }
+  });
+  
+  // Zeige alle Kunden im Haupt-Bereich
+  document.getElementById("out").innerHTML = html;
+  
+  // Warte kurz damit das Rendering fertig ist, dann drucke
+  setTimeout(() => {
+    window.print();
+  }, 500);
 }
 
 document.getElementById("list").innerHTML = ORDER.map(k => {
