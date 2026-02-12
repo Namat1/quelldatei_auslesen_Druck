@@ -1,6 +1,6 @@
 # app.py
 # ------------------------------------------------------------
-# FINAL VERSION: Fix für Deutsche See & korrekte Spaltenzuordnung
+# FINAL VERSION: Fix NameError & Deutsche See Integration
 # ------------------------------------------------------------
 
 import json
@@ -43,10 +43,15 @@ def normalize_time(s) -> str:
         return s + " Uhr"
     return s
 
+def group_sort_key(g: str):
+    """Sortiert numerische Gruppen (z.B. Sortimente) korrekt vor Text."""
+    g = str(g).strip()
+    if g.isdigit(): return (0, int(g))
+    return (1, g.lower())
+
 # --- Detektions-Logiken ---
 
 def detect_triplets(columns: List[str]):
-    # Findet: Mo Geflügel Zeit, Mo Geflügel Sort, Mo Geflügel Tag
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
     for c in columns:
@@ -57,7 +62,6 @@ def detect_triplets(columns: List[str]):
     return found
 
 def detect_bspalten(columns: List[str]):
-    # Findet: Mo Z Fleisch B_Di, Mo Fleisch B_Di, etc.
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)$", re.IGNORECASE)
     mapping = {}
     for c in columns:
@@ -73,13 +77,13 @@ def detect_bspalten(columns: List[str]):
     return mapping
 
 def detect_ds_triplets(columns: List[str]):
-    # Speziell für Deutsche See
     rx = re.compile(r"^DS\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp = {}
     for c in columns:
         m = rx.match(c)
         if m:
-            day_de = DAY_SHORT_TO_DE.get(m.group(1)) or m.group(1)
+            day_raw = m.group(1).strip()
+            day_de = DAY_SHORT_TO_DE.get(day_raw) or day_raw
             if day_de in DAYS_DE: tmp.setdefault(day_de, {})[m.group(2).capitalize()] = c
     return tmp
 
@@ -199,7 +203,7 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 
 # --- STREAMLIT ---
 st.set_page_config(page_title="Sendeplan", layout="wide")
-st.title("Excel → Sendeplan (Fix: Deutsche See & Datenkorrektur)")
+st.title("Sendeplan Generator")
 
 up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
 if up:
@@ -213,22 +217,22 @@ if up:
         if not knr: continue
         
         bestell = []
-        # 1. Tripel
         for d_de in DAYS_DE:
+            # 1. Tripel
             if d_de in trip:
                 for g in sorted(trip[d_de].keys(), key=group_sort_key):
                     f = trip[d_de][g]
                     s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
                     if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z})
             
-            # 2. B-Spalten (Deutsche See landet oft hier oder in ds_trip)
+            # 2. B-Spalten
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in keys:
                 f = bmap[k]
                 s, z = norm(r.get(f.get("sort", ""))), normalize_time(r.get(f.get("zeit", "")))
                 if s or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z})
 
-            # 3. DS-Tripel
+            # 3. DS-Tripel (Deutsche See)
             if d_de in ds_trip:
                 f = ds_trip[d_de]
                 s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
@@ -244,4 +248,4 @@ if up:
         }
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("HTML herunterladen", data=html, file_name="sendeplan_korrigiert.html", mime="text/html")
+    st.download_button("HTML herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
