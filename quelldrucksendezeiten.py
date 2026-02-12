@@ -1,6 +1,7 @@
 # app.py
 # ------------------------------------------------------------
-# FINAL VERSION: Fix NameError & Deutsche See Integration
+# FINAL VERSION: B-Spalten, DS-Integration, Touren & Fachberater
+# Optimiert gegen leere Extraseiten beim Druck
 # ------------------------------------------------------------
 
 import json
@@ -44,7 +45,7 @@ def normalize_time(s) -> str:
     return s
 
 def group_sort_key(g: str):
-    """Sortiert numerische Gruppen (z.B. Sortimente) korrekt vor Text."""
+    """Sortiert numerische Gruppen korrekt vor Text."""
     g = str(g).strip()
     if g.isdigit(): return (0, int(g))
     return (1, g.lower())
@@ -103,10 +104,19 @@ HTML_TEMPLATE = """<!doctype html>
   .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
   .item:hover{ background:rgba(255,255,255,0.08); }
   .wrap{ overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; }
+  
   .paper{
-    width:210mm; height:297mm; min-height:297mm; background:white; color:black; padding:12mm;
-    position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); page-break-after: always;
-    display:flex; flex-direction:column; --fs: 10.2pt;
+    width: 210mm;
+    height: 296.5mm;
+    min-height: 296.5mm;
+    background: white;
+    color: black;
+    padding: 12mm;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    --fs: 10.2pt;
   }
   .paper * { font-size: var(--fs); line-height: 1.15; }
   .ptitle{ text-align:center; font-weight:900; font-size:1.6em; margin:0; }
@@ -119,7 +129,23 @@ HTML_TEMPLATE = """<!doctype html>
   table{ width:100%; border-collapse:collapse; }
   th, td{ border:1px solid #000; padding:1.4mm; text-align:left; vertical-align:top; }
   th{ background:#f2f2f2; font-weight:bold; }
-  @media print{ .sidebar{ display:none; } .app{ display:block; padding:0; } .paper{ box-shadow:none; margin:0; border:none; } }
+
+  @media print{
+    .sidebar{ display:none !important; }
+    .app{ display:block; padding:0; margin:0; }
+    .main{ background:none; border:none; }
+    .wrap{ padding:0; display:block; }
+    .paper{
+      box-shadow: none;
+      margin: 0;
+      border: none;
+      page-break-inside: avoid;
+      page-break-after: always;
+    }
+    .paper:last-child {
+      page-break-after: auto !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -179,8 +205,8 @@ function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
     let fs = 10.2; p.style.setProperty("--fs", fs + "pt");
     let safety = 0;
-    while(p.scrollHeight > p.clientHeight + 2 && fs > 6.8 && safety < 40){
-      fs -= 0.1; p.style.setProperty("--fs", fs + "pt"); safety++;
+    while(p.scrollHeight > p.clientHeight && fs > 6.5 && safety < 50){
+      fs -= 0.1; p.style.setProperty("--fs", fs.toFixed(1) + "pt"); safety++;
     }
   });
 }
@@ -202,7 +228,7 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 """
 
 # --- STREAMLIT ---
-st.set_page_config(page_title="Sendeplan", layout="wide")
+st.set_page_config(page_title="Sendeplan Generator", layout="wide")
 st.title("Sendeplan Generator")
 
 up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
