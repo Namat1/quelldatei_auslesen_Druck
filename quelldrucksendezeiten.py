@@ -1,8 +1,7 @@
 # app.py
-# ------------------------------------------------------------
-# FINAL VERSION: B-Spalten, DS-Integration, Touren & Fachberater
-# Optimiert gegen leere Extraseiten beim Druck
-# ------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Excel -> Standalone-HTML (Präzisions-Extraktion & A4-Druck-Optimierung)
+# -----------------------------------------------------------------------------
 
 import json
 import re
@@ -11,17 +10,20 @@ from typing import Dict, Tuple, List
 import pandas as pd
 import streamlit as st
 
+# Konfiguration
 PLAN_TYP = "Standard"
 BEREICH = "Alle Sortimente Fleischwerk"
 DAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
+# Mapping für Wochentags-Abkürzungen aus der Excel
 DAY_SHORT_TO_DE = {
     "Mo": "Montag", "Di": "Dienstag", "Die": "Dienstag",
-    "Mi": "Mittwoch", "Mitt": "Mittwoch", "Do": "Donnerstag",
-    "Don": "Donnerstag", "Donn": "Donnerstag", "Fr": "Freitag",
-    "Sa": "Samstag", "Sam": "Samstag",
+    "Mi": "Mittwoch", "Mit": "Mittwoch", "Mitt": "Mittwoch",
+    "Do": "Donnerstag", "Don": "Donnerstag", "Donn": "Donnerstag",
+    "Fr": "Freitag", "Sa": "Samstag", "Sam": "Samstag",
 }
 
+# Spalten für die Tour-Daten (1030, 2027, etc.)
 TOUR_COLS = {
     "Montag": "Mo", "Dienstag": "Die", "Mittwoch": "Mitt",
     "Donnerstag": "Don", "Freitag": "Fr", "Samstag": "Sam",
@@ -44,33 +46,39 @@ def normalize_time(s) -> str:
         return s + " Uhr"
     return s
 
-def group_sort_key(g: str):
-    """Sortiert numerische Gruppen korrekt vor Text."""
-    g = str(g).strip()
-    if g.isdigit(): return (0, int(g))
-    return (1, g.lower())
-
-# --- Detektions-Logiken ---
+# --- Detektions-Logiken für die Excel-Spalten ---
 
 def detect_triplets(columns: List[str]):
-    rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
+    """Erkennt Standard-Tripel wie 'Mo 21 Zeit', 'Mo 21 Sort', 'Mo 21 Tag'."""
+    rx = re.compile(r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
     for c in columns:
-        m = rx.match(c)
+        m = rx.match(c.strip())
         if m:
             day_de = DAY_SHORT_TO_DE.get(m.group(1))
-            if day_de: found.setdefault(day_de, {}).setdefault(m.group(2).strip(), {})[m.group(3).capitalize()] = c
+            if day_de:
+                found.setdefault(day_de, {}).setdefault(m.group(2).strip(), {})[m.group(3).capitalize()] = c
     return found
 
 def detect_bspalten(columns: List[str]):
-    rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)$", re.IGNORECASE)
+    """Erkennt B-Spalten wie 'Mo Z 0 B_Sa', 'Mo 1011 B_Fr' oder 'Donn Z 22 B_Mo'."""
+    rx = re.compile(
+        r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"  # Liefertag
+        r"(?:(Z|L)\s+)?"                                     # Optional: Z (Zeit) oder L
+        r"(.+?)\s+"                                          # ID (z.B. 0, 1011, 22)
+        r"B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$", # Bestelltag
+        re.IGNORECASE
+    )
     mapping = {}
     for c in columns:
-        m = rx.match(c)
+        m = rx.match(c.strip())
         if m:
-            day_de, zl, group, b_de = DAY_SHORT_TO_DE.get(m.group(1)), (m.group(2) or "").upper(), m.group(3).strip(), DAY_SHORT_TO_DE.get(m.group(4))
-            if day_de and b_de:
-                key = (day_de, group, b_de)
+            day_de = DAY_SHORT_TO_DE.get(m.group(1))
+            zl = (m.group(2) or "").upper()
+            group_id = m.group(3).strip()
+            bestell_de = DAY_SHORT_TO_DE.get(m.group(4))
+            if day_de and bestell_de:
+                key = (day_de, group_id, bestell_de)
                 mapping.setdefault(key, {})
                 if zl == "Z": mapping[key]["zeit"] = c
                 elif zl == "L": mapping[key]["l"] = c
@@ -78,17 +86,19 @@ def detect_bspalten(columns: List[str]):
     return mapping
 
 def detect_ds_triplets(columns: List[str]):
-    rx = re.compile(r"^DS\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
+    """Erkennt Deutsche See Spalten: 'DS [Junk] zu [Liefertag] [Field]'."""
+    rx = re.compile(r"^DS\s+(.+?)\s+zu\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp = {}
     for c in columns:
-        m = rx.match(c)
+        m = rx.match(c.strip())
         if m:
-            day_raw = m.group(1).strip()
-            day_de = DAY_SHORT_TO_DE.get(day_raw) or day_raw
-            if day_de in DAYS_DE: tmp.setdefault(day_de, {})[m.group(2).capitalize()] = c
+            day_de = DAY_SHORT_TO_DE.get(m.group(2))
+            if day_de:
+                key = f"DS {m.group(1)} zu {m.group(2)}"
+                tmp.setdefault(day_de, {}).setdefault(key, {})[m.group(3).capitalize()] = c
     return tmp
 
-# --- HTML TEMPLATE ---
+# --- HTML TEMPLATE MIT DRUCK-FIXES ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -107,15 +117,10 @@ HTML_TEMPLATE = """<!doctype html>
   
   .paper{
     width: 210mm;
-    height: 296.5mm;
-    min-height: 296.5mm;
-    background: white;
-    color: black;
-    padding: 12mm;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    height: 296.5mm; /* Verhindert leere Extraseite */
+    background: white; color: black; padding: 12mm;
+    position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column; overflow: hidden;
     --fs: 10.2pt;
   }
   .paper * { font-size: var(--fs); line-height: 1.15; }
@@ -123,9 +128,11 @@ HTML_TEMPLATE = """<!doctype html>
   .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.3em; }
   .psub{ text-align:center; color:#555; margin-bottom:4mm; font-weight:bold; }
   .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom:1px solid #eee; padding-bottom:3mm; }
+  
   .tour-bar { display:flex; background:#f4f4f4; border:1px solid #ddd; margin-bottom:4mm; padding:2mm; border-radius:4px; justify-content:space-around; }
   .tour-item { text-align:center; font-size:0.85em; }
   .tour-item b { display:block; font-size:0.75em; color:#666; }
+
   table{ width:100%; border-collapse:collapse; }
   th, td{ border:1px solid #000; padding:1.4mm; text-align:left; vertical-align:top; }
   th{ background:#f2f2f2; font-weight:bold; }
@@ -136,15 +143,11 @@ HTML_TEMPLATE = """<!doctype html>
     .main{ background:none; border:none; }
     .wrap{ padding:0; display:block; }
     .paper{
-      box-shadow: none;
-      margin: 0;
-      border: none;
+      box-shadow: none; margin: 0; border: none;
       page-break-inside: avoid;
       page-break-after: always;
     }
-    .paper:last-child {
-      page-break-after: auto !important;
-    }
+    .paper:last-child { page-break-after: auto !important; }
   }
 </style>
 </head>
@@ -193,6 +196,7 @@ function render(c){
       <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
       <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
     </div>
+    <div style="font-size:0.8em; margin-bottom:1mm; font-weight:bold;">Tourenplan (Liefertage):</div>
     <div class="tour-bar">${tourHtml}</div>
     <table>
       <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
@@ -205,7 +209,7 @@ function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
     let fs = 10.2; p.style.setProperty("--fs", fs + "pt");
     let safety = 0;
-    while(p.scrollHeight > p.clientHeight && fs > 6.5 && safety < 50){
+    while(p.scrollHeight > p.clientHeight && fs > 6.8 && safety < 40){
       fs -= 0.1; p.style.setProperty("--fs", fs.toFixed(1) + "pt"); safety++;
     }
   });
@@ -227,15 +231,19 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 </html>
 """
 
-# --- STREAMLIT ---
+# --- STREAMLIT APP ---
 st.set_page_config(page_title="Sendeplan Generator", layout="wide")
-st.title("Sendeplan Generator")
+st.title("Sendeplan Generator (Präzisions-Version)")
 
 up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     cols = df.columns.tolist()
-    trip, bmap, ds_trip = detect_triplets(cols), detect_bspalten(cols), detect_ds_triplets(cols)
+    
+    # Detektoren initialisieren
+    trip = detect_triplets(cols)
+    bmap = detect_bspalten(cols)
+    ds_trip = detect_ds_triplets(cols)
     
     data = {}
     for _, r in df.iterrows():
@@ -244,25 +252,33 @@ if up:
         
         bestell = []
         for d_de in DAYS_DE:
-            # 1. Tripel
-            if d_de in trip:
-                for g in sorted(trip[d_de].keys(), key=group_sort_key):
-                    f = trip[d_de][g]
-                    s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
-                    if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z})
-            
-            # 2. B-Spalten
+            # 1. B-Spalten (Sortiments-IDs wie 0, 1011, 22, 91)
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in keys:
                 f = bmap[k]
-                s, z = norm(r.get(f.get("sort", ""))), normalize_time(r.get(f.get("zeit", "")))
-                if s or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z})
+                s = norm(r.get(f.get("sort", "")))
+                z = normalize_time(r.get(f.get("zeit", "")))
+                if s or z:
+                    bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z, "priority": 1})
+            
+            # 2. Standard-Tripel (z.B. ID 21)
+            if d_de in trip:
+                for g in trip[d_de]:
+                    f = trip[d_de][g]
+                    s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
+                    if s or t or z:
+                        bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "priority": 2})
 
-            # 3. DS-Tripel (Deutsche See)
+            # 3. Deutsche See Integration (DS)
             if d_de in ds_trip:
-                f = ds_trip[d_de]
-                s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
-                if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z})
+                for key_ds in ds_trip[d_de]:
+                    f = ds_trip[d_de][key_ds]
+                    s, t, z = norm(r.get(f.get("Sort"))), norm(r.get(f.get("Tag"))), normalize_time(r.get(f.get("Zeit")))
+                    if s or t or z:
+                        bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "priority": 3})
+
+        # Sortierung innerhalb eines Tages: Standard-Sortimente zuerst
+        bestell.sort(key=lambda x: x["priority"])
 
         data[knr] = {
             "plan_typ": PLAN_TYP, "bereich": BEREICH, "kunden_nr": knr,
@@ -273,5 +289,6 @@ if up:
             "bestell": bestell
         }
 
-    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("HTML herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
+    # HTML generieren
+    html_content = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
+    st.download_button("⬇️ HTML-Sendeplan herunterladen", data=html_content, file_name="sendeplan.html", mime="text/html")
