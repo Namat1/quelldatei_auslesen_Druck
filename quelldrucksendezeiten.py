@@ -362,21 +362,46 @@ HTML_TEMPLATE = """<!doctype html>
     
     /* Hintergrundfarben beibehalten */
     .day-header {
-      background: #e0e0e0 !important;
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+      color: white !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     
     .tour-table th {
-      background: #eee !important;
+      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+      color: white !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     
-    .main-table th {
-      background: #f2f2f2 !important;
+    table.main-table th {
+      background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
+      color: white !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+    }
+    
+    .head-box {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    /* Alternierende Zeilen beim Drucken */
+    table.main-table tbody tr:nth-child(even):not(.day-header) {
+      background-color: #f8f9fa !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    table.main-table tbody tr:nth-child(odd):not(.day-header) {
+      background-color: white !important;
+    }
+    
+    /* Schatten beim Drucken entfernen */
+    table.main-table, .tour-table, .head-box {
+      box-shadow: none !important;
     }
     
     /* Roter Titel bleibt rot */
@@ -388,33 +413,181 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   /* === GEMEINSAME STYLES === */
-  .paper-content *{ font-size: 9pt; line-height: 1.15; }
+  .paper-content *{ font-size: 9pt; line-height: 1.2; }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
-  .psub{ text-align:center; color:#333; margin: 0 0 2mm 0; font-weight:700; font-size:0.95em; }
+  .ptitle{ 
+    text-align:center; 
+    font-weight:900; 
+    font-size:1.6em; 
+    margin:0 0 2mm 0; 
+    color:#1a1a1a;
+    letter-spacing: 0.5px;
+  }
+  
+  .pstd{ 
+    text-align:center; 
+    color:#d0192b; 
+    font-weight:800; 
+    margin:1mm 0; 
+    font-size:1.2em;
+    letter-spacing: 0.3px;
+  }
+  
+  .psub{ 
+    text-align:center; 
+    color:#555; 
+    margin: 0 0 3mm 0; 
+    font-weight:600; 
+    font-size:0.95em; 
+  }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:5mm;
-    margin-bottom:2mm;
-    border-bottom:1.5px solid #000;
-    padding-bottom:1.5mm;
-    font-size:8.5pt;
+    gap:6mm;
+    margin-bottom:3mm;
+    padding:3mm;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
 
-  .tour-info { margin-bottom:2mm; }
+  .head-box > div {
+    font-size: 8.5pt;
+    line-height: 1.4;
+  }
 
-  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  .tour-table th { background:#eee; font-size:0.8em; padding:2px 1px; border:1px solid #000; font-weight:700; }
-  .tour-table td { border:1px solid #000; padding:3px 1px; text-align:center; font-weight:800; font-size:0.9em; }
+  .head-box b {
+    color: #2c3e50;
+    font-weight: 700;
+  }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:2mm; }
-  table.main-table th { border:1px solid #000; padding:3px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
-  table.main-table td { border:1px solid #000; padding:3px 4px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; }
+  .tour-info { 
+    margin-bottom: 3mm; 
+  }
 
-  .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
+  .tour-table { 
+    width:100%; 
+    border-collapse:separate;
+    border-spacing: 0;
+    table-layout:fixed;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  }
+  
+  .tour-table th { 
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+    font-size:0.8em; 
+    padding:3mm 2px; 
+    border:none;
+    font-weight:700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .tour-table th:first-child {
+    border-radius: 6px 0 0 0;
+  }
+  
+  .tour-table th:last-child {
+    border-radius: 0 6px 0 0;
+  }
+  
+  .tour-table td { 
+    border: 1px solid #dee2e6;
+    border-top: none;
+    padding:2.5mm 1px; 
+    text-align:center; 
+    font-weight:800; 
+    font-size:0.95em;
+    background: white;
+    color: #2c3e50;
+  }
+
+  table.main-table { 
+    width:100%; 
+    border-collapse:separate;
+    border-spacing: 0;
+    table-layout: fixed; 
+    margin-top:3mm;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  table.main-table thead {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+  }
+  
+  table.main-table th { 
+    border:none;
+    padding:3mm 4px; 
+    color: white;
+    font-weight:800; 
+    text-align:left; 
+    font-size:0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  table.main-table th:first-child {
+    padding-left: 6px;
+  }
+  
+  table.main-table tbody tr {
+    transition: background-color 0.2s ease;
+  }
+  
+  table.main-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  table.main-table td { 
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    padding:3mm 4px; 
+    vertical-align:top; 
+    word-wrap:break-word; 
+    overflow-wrap:anywhere; 
+    font-size:0.88em;
+    background: white;
+    color: #495057;
+  }
+  
+  table.main-table td:first-child {
+    padding-left: 6px;
+    font-weight: 600;
+  }
+  
+  table.main-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .day-header { 
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    color: white !important;
+    font-weight:900;
+    font-size: 0.95em !important;
+    border-top: 2px solid #0056b3 !important;
+    border-bottom: 2px solid #0056b3 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .day-header:first-child {
+    padding-left: 6px !important;
+  }
+  
+  /* Alternierende Zeilen für bessere Lesbarkeit */
+  table.main-table tbody tr:nth-child(even):not(.day-header) {
+    background-color: #f8f9fa;
+  }
+  
+  table.main-table tbody tr:nth-child(odd):not(.day-header) {
+    background-color: white;
+  }
   
   /* Bereichs-Buttons */
   .area-buttons {
