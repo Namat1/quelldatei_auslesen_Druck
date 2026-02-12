@@ -304,10 +304,17 @@ HTML_TEMPLATE = """<!doctype html>
     /* Scrollbarer Inhalt */
     .paper-content{
       width: 100%;
-      height: auto;
+      height: 100%;
       padding: 10mm 8mm;
-      overflow: visible;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
+
+    /* Scrollbalken-Styling */
+    .paper-content::-webkit-scrollbar { width: 10px; }
+    .paper-content::-webkit-scrollbar-track { background: #f1f1f1; }
+    .paper-content::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
+    .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
   }
 
   /* === DRUCK-ANSICHT === */
@@ -355,46 +362,21 @@ HTML_TEMPLATE = """<!doctype html>
     
     /* Hintergrundfarben beibehalten */
     .day-header {
-      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-      color: white !important;
+      background: #e0e0e0 !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     
     .tour-table th {
-      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
-      color: white !important;
+      background: #eee !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     
-    table.main-table th {
-      background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
-      color: white !important;
+    .main-table th {
+      background: #f2f2f2 !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
-    }
-    
-    .head-box {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    /* Alternierende Zeilen beim Drucken */
-    table.main-table tbody tr:nth-child(even):not(.day-header) {
-      background-color: #f8f9fa !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    table.main-table tbody tr:nth-child(odd):not(.day-header) {
-      background-color: white !important;
-    }
-    
-    /* Schatten beim Drucken entfernen */
-    table.main-table, .tour-table, .head-box {
-      box-shadow: none !important;
     }
     
     /* Roter Titel bleibt rot */
@@ -405,178 +387,34 @@ HTML_TEMPLATE = """<!doctype html>
     }
   }
 
-  /* === GEMEINSAME STYLES - ULTRA KOMPAKT FÜR A4 === */
-  .paper-content *{ font-size: 7.5pt; line-height: 1.1; }
+  /* === GEMEINSAME STYLES === */
+  .paper-content *{ font-size: 9pt; line-height: 1.15; }
 
-  .ptitle{ 
-    text-align:center; 
-    font-weight:900; 
-    font-size:1.4em; 
-    margin:0 0 1mm 0; 
-    color:#1a1a1a;
-    letter-spacing: 0.3px;
-  }
-  
-  .pstd{ 
-    text-align:center; 
-    color:#d0192b; 
-    font-weight:800; 
-    margin:0.5mm 0; 
-    font-size:1.1em;
-    letter-spacing: 0.2px;
-  }
-  
-  .psub{ 
-    text-align:center; 
-    color:#555; 
-    margin: 0 0 1.5mm 0; 
-    font-weight:600; 
-    font-size:0.9em; 
-  }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
+  .psub{ text-align:center; color:#333; margin: 0 0 2mm 0; font-weight:700; font-size:0.95em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:4mm;
-    margin-bottom:1.5mm;
-    padding:2mm;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 4px;
-    border: 1px solid #dee2e6;
+    gap:5mm;
+    margin-bottom:2mm;
+    border-bottom:1.5px solid #000;
+    padding-bottom:1.5mm;
+    font-size:8.5pt;
   }
 
-  .head-box > div {
-    font-size: 7pt;
-    line-height: 1.3;
-  }
+  .tour-info { margin-bottom:2mm; }
 
-  .head-box b {
-    color: #2c3e50;
-    font-weight: 700;
-  }
+  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .tour-table th { background:#eee; font-size:0.8em; padding:2px 1px; border:1px solid #000; font-weight:700; }
+  .tour-table td { border:1px solid #000; padding:3px 1px; text-align:center; font-weight:800; font-size:0.9em; }
 
-  .tour-info { 
-    margin-bottom: 1.5mm; 
-  }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:2mm; }
+  table.main-table th { border:1px solid #000; padding:3px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
+  table.main-table td { border:1px solid #000; padding:3px 4px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; }
 
-  .tour-table { 
-    width:100%; 
-    border-collapse:separate;
-    border-spacing: 0;
-    table-layout:fixed;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  .tour-table th { 
-    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-    color: white;
-    font-size:0.75em; 
-    padding:1.5mm 1px; 
-    border:none;
-    font-weight:700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  
-  .tour-table th:first-child {
-    border-radius: 4px 0 0 0;
-  }
-  
-  .tour-table th:last-child {
-    border-radius: 0 4px 0 0;
-  }
-  
-  .tour-table td { 
-    border: 1px solid #dee2e6;
-    border-top: none;
-    padding:1.5mm 1px; 
-    text-align:center; 
-    font-weight:800; 
-    font-size:0.9em;
-    background: white;
-    color: #2c3e50;
-  }
-
-  table.main-table { 
-    width:100%; 
-    border-collapse:separate;
-    border-spacing: 0;
-    table-layout: fixed; 
-    margin-top:1.5mm;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  table.main-table thead {
-    background: linear-gradient(135deg, #495057 0%, #343a40 100%);
-  }
-  
-  table.main-table th { 
-    border:none;
-    padding:1.5mm 3px; 
-    color: white;
-    font-weight:800; 
-    text-align:left; 
-    font-size:0.8em;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  
-  table.main-table th:first-child {
-    padding-left: 4px;
-  }
-  
-  table.main-table tbody tr {
-    transition: background-color 0.2s ease;
-  }
-  
-  table.main-table tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-  
-  table.main-table td { 
-    border: none;
-    border-bottom: 1px solid #e9ecef;
-    padding:1.5mm 3px; 
-    vertical-align:top; 
-    word-wrap:break-word; 
-    overflow-wrap:anywhere; 
-    font-size:0.85em;
-    background: white;
-    color: #495057;
-  }
-  
-  table.main-table td:first-child {
-    padding-left: 4px;
-    font-weight: 600;
-  }
-  
-  table.main-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .day-header { 
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-    color: white !important;
-    font-weight:900;
-    font-size: 0.9em !important;
-    border-top: 1px solid #0056b3 !important;
-    border-bottom: 1px solid #0056b3 !important;
-  }
-  
-  .day-header:first-child {
-    padding-left: 4px !important;
-  }
-  
-  /* Alternierende Zeilen */
-  table.main-table tbody tr:nth-child(even):not(.day-header) {
-    background-color: #f8f9fa;
-  }
-  
-  table.main-table tbody tr:nth-child(odd):not(.day-header) {
-    background-color: white;
-  }
+  .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
   
   /* Bereichs-Buttons */
   .area-buttons {
@@ -672,7 +510,7 @@ function render(c){
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
   return `<div class="paper">
-    <div class="paper-content" data-knr="${c.kunden_nr}">
+    <div class="paper-content">
       <div class="ptitle">Sende- &amp; Belieferungsplan</div>
       <div class="pstd">${esc(c.plan_typ)}</div>
       <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
@@ -697,33 +535,10 @@ function render(c){
   </div>`;
 }
 
-// A4-GARANTIE: Skaliert Inhalt automatisch damit er auf eine A4-Seite passt
-function autoScaleToA4() {
-  document.querySelectorAll('.paper-content').forEach(content => {
-    // Reset vorherige Skalierung
-    content.style.transform = '';
-    
-    // Messe tatsächliche Höhe
-    const actualHeight = content.scrollHeight;
-    const maxHeight = 277; // 297mm A4 - 20mm Ränder (10mm oben + 10mm unten)
-    
-    if (actualHeight > maxHeight) {
-      // Berechne Skalierungsfaktor
-      const scale = (maxHeight / actualHeight) * 0.98; // 98% für Sicherheitsmarge
-      content.style.transform = `scale(${scale})`;
-      content.style.transformOrigin = 'top center';
-      
-      console.log(`Skaliert Kunde ${content.dataset.knr}: ${actualHeight}px → ${actualHeight * scale}px (Faktor: ${scale.toFixed(2)})`);
-    }
-  });
-}
-
 function showOne(){
   const k = document.getElementById("knr").value.trim();
   if(DATA[k]) {
     document.getElementById("out").innerHTML = render(DATA[k]);
-    // Warte bis DOM aktualisiert ist, dann skaliere
-    setTimeout(autoScaleToA4, 50);
   }
 }
 
@@ -780,12 +595,9 @@ function printAll(){
   // Zeige alle Kunden im Haupt-Bereich
   document.getElementById("out").innerHTML = html;
   
-  // Warte kurz damit das Rendering fertig ist, skaliere dann und drucke
+  // Warte kurz damit das Rendering fertig ist, dann drucke
   setTimeout(() => {
-    autoScaleToA4();
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    window.print();
   }, 500);
 }
 
