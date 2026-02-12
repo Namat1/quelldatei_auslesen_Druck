@@ -1,17 +1,4 @@
-Ich habe die Logik basierend auf deinem direkten Vergleich und der Quelldatei (`Quell.xlsx`) komplett neu aufgebaut.
-
-Das Hauptproblem war eine falsche Zuordnung der Spalten-Indizes bei den sogenannten „Tripel“-Daten (Sortiment, Tag, Zeit). Ich habe den Code so korrigiert, dass er **jeden einzelnen Eintrag** exakt so ausgibt, wie er in deiner „Richtig“-Vorgabe steht.
-
-### Wesentliche Änderungen:
-
-1. **Daten-Fix:** Die Zuordnung für Montag (Frischfleisch auf Freitag statt Donnerstag), Donnerstag (Wiesenhof auf Dienstag statt Montag) und alle anderen Tage wurde korrigiert.
-2. **Layout & Lesbarkeit:** Die Schrift ist nun deutlich größer (**12pt**), die Tage sind durch **dicke graue Balken** optisch getrennt, und es gibt keine Tabellenumbrüche innerhalb eines Sortiments mehr.
-3. **Wiesenhof-Spezial:** Die ID `1011` wird nun priorisiert an der richtigen Stelle (direkt nach Fleisch/Wurst) ausgegeben.
-
-Hier ist das vollständige, korrigierte Skript:
-
-```python
-# app.py
+# quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
 # VERSION: ULTIMATIVE PRÄZISION - 100% ÜBEREINSTIMMUNG
 # -----------------------------------------------------------------------------
@@ -52,6 +39,11 @@ def normalize_time(s) -> str:
     if re.fullmatch(r"\d{1,2}:\d{2}", s): return s + " Uhr"
     if re.fullmatch(r"\d{1,2}", s): return s.zfill(2) + ":00 Uhr"
     return s
+
+def group_sort_key(g: str):
+    g = str(g).strip()
+    if g.isdigit(): return (0, int(g))
+    return (1, g.lower())
 
 def detect_bspalten(columns: List[str]):
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$", re.IGNORECASE)
@@ -112,7 +104,7 @@ HTML_TEMPLATE = """<!doctype html>
   .paper{
     width: 210mm; min-height: 296.5mm; background: white; color: black; padding: 12mm;
     box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-    --fs: 12pt; /* Deutlich größere Schrift */
+    --fs: 12pt;
   }
   .paper * { font-size: var(--fs); line-height: 1.4; }
   .ptitle{ text-align:center; font-weight:900; font-size:1.8em; margin:0; }
@@ -130,7 +122,6 @@ HTML_TEMPLATE = """<!doctype html>
   table.main-table th { border: 1px solid #000; padding: 8px; background:#f2f2f2; font-weight:bold; text-align:left; }
   table.main-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
 
-  /* Tages-Abgrenzung */
   .day-header { background-color: #e0e0e0 !important; font-weight: 900; border-top: 3px solid #000 !important; }
 
   @media print{
@@ -217,14 +208,16 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 </html>
 """
 
-# --- PYTHON ---
+# --- STREAMLIT APP ---
 st.set_page_config(page_title="Sendeplan Fix", layout="wide")
 
-up = st.file_uploader("Quelldatei laden", type=["xlsx"])
+up = st.file_uploader("Excel Datei hochladen", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     cols = df.columns.tolist()
-    trip, bmap, ds_trip = detect_triplets(cols), detect_bspalten(cols), detect_ds_triplets(cols)
+    trip = detect_triplets(cols)
+    bmap = detect_bspalten(cols)
+    ds_trip = detect_ds_triplets(cols)
     
     data = {}
     for _, r in df.iterrows():
@@ -233,25 +226,43 @@ if up:
         
         bestell = []
         for d_de in DAYS_DE:
-            # 1. Fleisch/Wurst (ID 21) IMMER ZUERST
+            # Fleisch/Wurst (ID 21)
             if d_de in trip and "21" in trip[d_de]:
                 f = trip[d_de]["21"]
-                bestell.append({"liefertag": d_de, "sortiment": norm(r.get(f.get("Sort"))), "bestelltag": norm(r.get(f.get("Tag"))), "bestellschluss": normalize_time(r.get(f.get("Zeit"))), "prio": 0})
+                bestell.append({
+                    "liefertag": d_de, 
+                    "sortiment": norm(r.get(f.get("Sort"))), 
+                    "bestelltag": norm(r.get(f.get("Tag"))), 
+                    "bestellschluss": normalize_time(r.get(f.get("Zeit"))), 
+                    "prio": 0
+                })
             
-            # 2. B-Spalten (Wiesenhof 1011, Bio 41, Frischfleisch 65, Avo 0, Werbe 91)
+            # B-Spalten (Wiesenhof etc.)
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in sorted(keys, key=lambda x: str(x[1])):
                 f = bmap[k]
                 s = norm(r.get(f.get("sort", "")))
                 z = normalize_time(r.get(f.get("zeit", "")))
                 if s or z:
-                    bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z, "prio": 1})
+                    bestell.append({
+                        "liefertag": d_de, 
+                        "sortiment": s, 
+                        "bestelltag": k[2], 
+                        "bestellschluss": z, 
+                        "prio": 1
+                    })
             
-            # 3. Deutsche See
+            # Deutsche See
             if d_de in ds_trip:
                 for key_ds in ds_trip[d_de]:
                     f = ds_trip[d_de][key_ds]
-                    bestell.append({"liefertag": d_de, "sortiment": norm(r.get(f.get("Sort"))), "bestelltag": norm(r.get(f.get("Tag"))), "bestellschluss": normalize_time(r.get(f.get("Zeit"))), "prio": 2})
+                    bestell.append({
+                        "liefertag": d_de, 
+                        "sortiment": norm(r.get(f.get("Sort"))), 
+                        "bestelltag": norm(r.get(f.get("Tag"))), 
+                        "bestellschluss": normalize_time(r.get(f.get("Zeit"))), 
+                        "prio": 2
+                    })
 
         data[knr] = {
             "plan_typ": PLAN_TYP, "bereich": BEREICH, "kunden_nr": knr,
@@ -263,6 +274,4 @@ if up:
         }
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("Download Sendeplan", data=html, file_name="sendeplan.html", mime="text/html")
-
-```
+    st.download_button("Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
