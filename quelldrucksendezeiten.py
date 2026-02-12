@@ -1,14 +1,13 @@
 # quelldrucksendezeiten_fixed.py
 # -----------------------------------------------------------------------------
 # VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
-# + LOGO im PDF/Print oben drüber (Base64 eingebettet)
+# + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
 # -----------------------------------------------------------------------------
 
 import json
 import re
 import datetime
 import base64
-import os
 from pathlib import Path
 from typing import List
 import pandas as pd
@@ -141,7 +140,7 @@ def detect_bspalten(columns: List[str]):
 
     # Phase 1: ohne B
     for c in columns:
-        if re.search(r'\sB[_ ]\s*', c, re.IGNORECASE):
+        if re.search(r"\sB[_ ]\s*", c, re.IGNORECASE):
             continue
 
         m = rx_no_b.match(c.strip())
@@ -217,8 +216,7 @@ def detect_triplets(columns: List[str]):
 
 def detect_ds_triplets(columns: List[str]):
     rx = re.compile(
-        r"^DS\s+(.+?)\s+zu\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
-        r"(Zeit|Sort|Tag)$",
+        r"^DS\s+(.+?)\s+zu\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(Zeit|Sort|Tag)$",
         re.IGNORECASE
     )
     tmp = {}
@@ -236,22 +234,15 @@ def detect_ds_triplets(columns: List[str]):
 
 def load_logo_data_uri() -> str:
     """
-    Lädt das NFC-Logo als Base64 Data-URI, damit es im HTML/Print immer verfügbar ist.
-    Sucht im Script-Ordner und zusätzlich in /mnt/data (Streamlit/Container).
+    Lädt Logo von Festplatte (Fallback), z.B. neben dem Script oder /mnt/data.
     """
     candidates = []
-
-    # Script-Ordner (falls als Datei neben dem Script liegt)
     try:
         here = Path(__file__).resolve().parent
         candidates.append(here / "Logo_NORDfrische Center (NFC).png")
     except Exception:
         pass
-
-    # aktuelles Working Directory
     candidates.append(Path.cwd() / "Logo_NORDfrische Center (NFC).png")
-
-    # Container-Pfad (wie bei dir angegeben)
     candidates.append(Path("/mnt/data/Logo_NORDfrische Center (NFC).png"))
 
     for p in candidates:
@@ -261,8 +252,18 @@ def load_logo_data_uri() -> str:
                 return "data:image/png;base64," + base64.b64encode(b).decode("ascii")
         except Exception:
             continue
-
     return ""
+
+
+def logo_file_to_data_uri(uploaded_file) -> str:
+    """
+    Wandelt ein hochgeladenes Streamlit-File (PNG/JPG/SVG) in eine Data-URI um.
+    """
+    if not uploaded_file:
+        return ""
+    mime = uploaded_file.type or "image/png"
+    b = uploaded_file.getvalue()
+    return f"data:{mime};base64," + base64.b64encode(b).decode("ascii")
 
 
 # --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT - 4 BEREICHE) ---
@@ -348,11 +349,9 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     table, th, td { border-color: #000 !important; }
-
     .day-header { background: #e0e0e0 !important; }
     .tour-table th { background: #eee !important; }
     .main-table th { background: #f2f2f2 !important; }
-
     .pstd { color: #d0192b !important; }
   }
 
@@ -365,7 +364,7 @@ HTML_TEMPLATE = """<!doctype html>
     margin: 0 0 2.5mm 0;
   }
   .logo{
-    height: 18mm;           /* -> sauber im A4-Header */
+    height: 18mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
@@ -488,7 +487,7 @@ function render(c){
   const tourRow  = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
-  const logoHtml = LOGO_SRC ? `<div class="logo-wrap"><img class="logo" src="${LOGO_SRC}" alt="NORDfrische Center Logo"></div>` : "";
+  const logoHtml = LOGO_SRC ? `<div class="logo-wrap"><img class="logo" src="${LOGO_SRC}" alt="Logo"></div>` : "";
 
   return `<div class="paper">
     <div class="paper-content">
@@ -519,9 +518,7 @@ function render(c){
 
 function showOne(){
   const k = document.getElementById("knr").value.trim();
-  if(DATA[k]) {
-    document.getElementById("out").innerHTML = render(DATA[k]);
-  }
+  if(DATA[k]) document.getElementById("out").innerHTML = render(DATA[k]);
 }
 
 function switchArea(area){
@@ -533,18 +530,12 @@ function switchArea(area){
   document.getElementById(`btn-${area}`).classList.add('active');
 
   updateList();
-
   document.getElementById("knr").value = "";
   document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
 }
 
 function getAreaName(area){
-  const names = {
-    'direkt': 'Direkt',
-    'mk': 'MK',
-    'nms': 'HuPa NMS',
-    'malchow': 'HuPa Malchow'
-  };
+  const names = {'direkt':'Direkt','mk':'MK','nms':'HuPa NMS','malchow':'HuPa Malchow'};
   return names[area] || area;
 }
 
@@ -564,7 +555,7 @@ function printAll(){
   ORDER.forEach(k => { if(DATA[k]) html += render(DATA[k]); });
   document.getElementById("out").innerHTML = html;
 
-  setTimeout(() => { window.print(); }, 500);
+  setTimeout(() => window.print(), 500);
 }
 
 updateList();
@@ -578,7 +569,19 @@ st.set_page_config(page_title="Sendeplan Generator - 4 Bereiche", layout="wide")
 st.title("Sendeplan Generator")
 st.write("Verarbeitet 4 Bereiche: Direkt, MK, HuPa NMS, HuPa Malchow")
 
+st.subheader("Logo (optional)")
+logo_up = st.file_uploader("Logo oben im Druck (PNG/JPG/SVG)", type=["png", "jpg", "jpeg", "svg"])
+
+# Optional Preview
+logo_preview_uri = logo_file_to_data_uri(logo_up) or load_logo_data_uri()
+if logo_preview_uri:
+    st.image(logo_preview_uri, caption="Verwendetes Logo (Vorschau)", use_container_width=True)
+else:
+    st.info("Kein Logo gewählt/gefunden. (Upload oder Datei 'Logo_NORDfrische Center (NFC).png')")
+
+st.subheader("Excel")
 up = st.file_uploader("Excel Datei laden", type=["xlsx"])
+
 if up:
     SHEETS = {
         'direkt': 'Direkt 1 - 99',
@@ -604,6 +607,7 @@ if up:
         ds_trip = detect_ds_triplets(cols)
 
         data = {}
+
         for _, r in df.iterrows():
             knr = norm(r.get("Nr", ""))
             if not knr:
@@ -641,7 +645,7 @@ if up:
                     if l_col:
                         tag = norm(r.get(l_col, ""))
                         if not tag:
-                            tag = k[2]
+                            tag = k[2]  # Fallback Spaltennamen
                     else:
                         tag = k[2]
 
@@ -668,7 +672,7 @@ if up:
                                 "sortiment": s,
                                 "bestelltag": tag,
                                 "bestellschluss": t,
-                                "prio": 5.5
+                                "prio": 5.5  # nach Avo (5), vor Werbemittel (6)
                             })
 
                 day_items.sort(key=lambda x: x["prio"])
@@ -690,12 +694,10 @@ if up:
         all_data[area_key] = data
         st.success(f"✓ {sheet_name}: {len(data)} Kunden verarbeitet")
 
-    logo_data_uri = load_logo_data_uri()
-
     html = HTML_TEMPLATE.replace(
-        "__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(',', ':'))
+        "__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(",", ":"))
     ).replace(
-        "__LOGO_DATAURI__", logo_data_uri
+        "__LOGO_DATAURI__", logo_preview_uri or ""
     )
 
     st.write("---")
