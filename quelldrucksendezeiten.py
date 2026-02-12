@@ -304,17 +304,10 @@ HTML_TEMPLATE = """<!doctype html>
     /* Scrollbarer Inhalt */
     .paper-content{
       width: 100%;
-      height: 100%;
+      height: auto;
       padding: 10mm 8mm;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: visible;
     }
-
-    /* Scrollbalken-Styling */
-    .paper-content::-webkit-scrollbar { width: 10px; }
-    .paper-content::-webkit-scrollbar-track { background: #f1f1f1; }
-    .paper-content::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
-    .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
   }
 
   /* === DRUCK-ANSICHT === */
@@ -412,50 +405,49 @@ HTML_TEMPLATE = """<!doctype html>
     }
   }
 
-  /* === GEMEINSAME STYLES === */
-  .paper-content *{ font-size: 9pt; line-height: 1.2; }
+  /* === GEMEINSAME STYLES - ULTRA KOMPAKT FÜR A4 === */
+  .paper-content *{ font-size: 7.5pt; line-height: 1.1; }
 
   .ptitle{ 
     text-align:center; 
     font-weight:900; 
-    font-size:1.6em; 
-    margin:0 0 2mm 0; 
+    font-size:1.4em; 
+    margin:0 0 1mm 0; 
     color:#1a1a1a;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
   
   .pstd{ 
     text-align:center; 
     color:#d0192b; 
     font-weight:800; 
-    margin:1mm 0; 
-    font-size:1.2em;
-    letter-spacing: 0.3px;
+    margin:0.5mm 0; 
+    font-size:1.1em;
+    letter-spacing: 0.2px;
   }
   
   .psub{ 
     text-align:center; 
     color:#555; 
-    margin: 0 0 3mm 0; 
+    margin: 0 0 1.5mm 0; 
     font-weight:600; 
-    font-size:0.95em; 
+    font-size:0.9em; 
   }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:6mm;
-    margin-bottom:3mm;
-    padding:3mm;
+    gap:4mm;
+    margin-bottom:1.5mm;
+    padding:2mm;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 6px;
+    border-radius: 4px;
     border: 1px solid #dee2e6;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
 
   .head-box > div {
-    font-size: 8.5pt;
-    line-height: 1.4;
+    font-size: 7pt;
+    line-height: 1.3;
   }
 
   .head-box b {
@@ -464,7 +456,7 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .tour-info { 
-    margin-bottom: 3mm; 
+    margin-bottom: 1.5mm; 
   }
 
   .tour-table { 
@@ -472,37 +464,36 @@ HTML_TEMPLATE = """<!doctype html>
     border-collapse:separate;
     border-spacing: 0;
     table-layout:fixed;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   }
   
   .tour-table th { 
     background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
     color: white;
-    font-size:0.8em; 
-    padding:3mm 2px; 
+    font-size:0.75em; 
+    padding:1.5mm 1px; 
     border:none;
     font-weight:700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
   
   .tour-table th:first-child {
-    border-radius: 6px 0 0 0;
+    border-radius: 4px 0 0 0;
   }
   
   .tour-table th:last-child {
-    border-radius: 0 6px 0 0;
+    border-radius: 0 4px 0 0;
   }
   
   .tour-table td { 
     border: 1px solid #dee2e6;
     border-top: none;
-    padding:2.5mm 1px; 
+    padding:1.5mm 1px; 
     text-align:center; 
     font-weight:800; 
-    font-size:0.95em;
+    font-size:0.9em;
     background: white;
     color: #2c3e50;
   }
@@ -512,10 +503,9 @@ HTML_TEMPLATE = """<!doctype html>
     border-collapse:separate;
     border-spacing: 0;
     table-layout: fixed; 
-    margin-top:3mm;
-    border-radius: 8px;
+    margin-top:1.5mm;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   }
   
   table.main-table thead {
@@ -524,17 +514,17 @@ HTML_TEMPLATE = """<!doctype html>
   
   table.main-table th { 
     border:none;
-    padding:3mm 4px; 
+    padding:1.5mm 3px; 
     color: white;
     font-weight:800; 
     text-align:left; 
-    font-size:0.85em;
+    font-size:0.8em;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
   
   table.main-table th:first-child {
-    padding-left: 6px;
+    padding-left: 4px;
   }
   
   table.main-table tbody tr {
@@ -548,17 +538,17 @@ HTML_TEMPLATE = """<!doctype html>
   table.main-table td { 
     border: none;
     border-bottom: 1px solid #e9ecef;
-    padding:3mm 4px; 
+    padding:1.5mm 3px; 
     vertical-align:top; 
     word-wrap:break-word; 
     overflow-wrap:anywhere; 
-    font-size:0.88em;
+    font-size:0.85em;
     background: white;
     color: #495057;
   }
   
   table.main-table td:first-child {
-    padding-left: 6px;
+    padding-left: 4px;
     font-weight: 600;
   }
   
@@ -570,17 +560,16 @@ HTML_TEMPLATE = """<!doctype html>
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
     color: white !important;
     font-weight:900;
-    font-size: 0.95em !important;
-    border-top: 2px solid #0056b3 !important;
-    border-bottom: 2px solid #0056b3 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 0.9em !important;
+    border-top: 1px solid #0056b3 !important;
+    border-bottom: 1px solid #0056b3 !important;
   }
   
   .day-header:first-child {
-    padding-left: 6px !important;
+    padding-left: 4px !important;
   }
   
-  /* Alternierende Zeilen für bessere Lesbarkeit */
+  /* Alternierende Zeilen */
   table.main-table tbody tr:nth-child(even):not(.day-header) {
     background-color: #f8f9fa;
   }
@@ -683,7 +672,7 @@ function render(c){
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
   return `<div class="paper">
-    <div class="paper-content">
+    <div class="paper-content" data-knr="${c.kunden_nr}">
       <div class="ptitle">Sende- &amp; Belieferungsplan</div>
       <div class="pstd">${esc(c.plan_typ)}</div>
       <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
@@ -708,10 +697,33 @@ function render(c){
   </div>`;
 }
 
+// A4-GARANTIE: Skaliert Inhalt automatisch damit er auf eine A4-Seite passt
+function autoScaleToA4() {
+  document.querySelectorAll('.paper-content').forEach(content => {
+    // Reset vorherige Skalierung
+    content.style.transform = '';
+    
+    // Messe tatsächliche Höhe
+    const actualHeight = content.scrollHeight;
+    const maxHeight = 277; // 297mm A4 - 20mm Ränder (10mm oben + 10mm unten)
+    
+    if (actualHeight > maxHeight) {
+      // Berechne Skalierungsfaktor
+      const scale = (maxHeight / actualHeight) * 0.98; // 98% für Sicherheitsmarge
+      content.style.transform = `scale(${scale})`;
+      content.style.transformOrigin = 'top center';
+      
+      console.log(`Skaliert Kunde ${content.dataset.knr}: ${actualHeight}px → ${actualHeight * scale}px (Faktor: ${scale.toFixed(2)})`);
+    }
+  });
+}
+
 function showOne(){
   const k = document.getElementById("knr").value.trim();
   if(DATA[k]) {
     document.getElementById("out").innerHTML = render(DATA[k]);
+    // Warte bis DOM aktualisiert ist, dann skaliere
+    setTimeout(autoScaleToA4, 50);
   }
 }
 
@@ -768,9 +780,12 @@ function printAll(){
   // Zeige alle Kunden im Haupt-Bereich
   document.getElementById("out").innerHTML = html;
   
-  // Warte kurz damit das Rendering fertig ist, dann drucke
+  // Warte kurz damit das Rendering fertig ist, skaliere dann und drucke
   setTimeout(() => {
-    window.print();
+    autoScaleToA4();
+    setTimeout(() => {
+      window.print();
+    }, 100);
   }, 500);
 }
 
