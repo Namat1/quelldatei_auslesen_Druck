@@ -1,16 +1,15 @@
 # quelldrucksendezeiten_fixed.py
 # -----------------------------------------------------------------------------
 # VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
-# -----------------------------------------------------------------------------
-# Änderungen:
-# - Sortimente werden nach ihrem TATSÄCHLICHEN Namen klassifiziert, nicht nach Spaltennummer
-# - Bestelltag wird aus L-Spalte gelesen (falls vorhanden), nicht aus Spaltennamen
-# - Robustere Handhabung von fehlplatzierten Sortimenten
+# + LOGO im PDF/Print oben drüber (Base64 eingebettet)
 # -----------------------------------------------------------------------------
 
 import json
 import re
 import datetime
+import base64
+import os
+from pathlib import Path
 from typing import List
 import pandas as pd
 import streamlit as st
@@ -29,15 +28,6 @@ DAY_SHORT_TO_DE = {
 }
 
 # Reihenfolge der Sortimente innerhalb eines Tages (Prio)
-# Basierend auf dem RICHTIGEN PDF (nicht dem falschen!):
-# 1. Fleisch- & Wurst (21)
-# 2. Geflügel Wiesenhof (1011)
-# 3. Bio-Geflügel (41)
-# 4. Frischfleisch Veredlung (65)
-# 5. Avo-Gewürze (0)
-# 6. Avo-Gewürze (0)
-# 7. Werbemittel (91)
-# WICHTIG: Pfeiffer (22) kommt nach Wiesenhof (1011), vor Bio (41) - siehe Donnerstag im richtigen PDF!
 SORT_PRIO = {"21": 0, "1011": 1, "22": 2, "41": 3, "65": 4, "0": 5, "91": 6}
 
 TOUR_COLS = {
@@ -97,35 +87,32 @@ def canon_group_id(label: str) -> str:
     if m:
         return m.group(1)
 
-    # heuristische Treffer (Text) - REIHENFOLGE IST KRITISCH!
-    # Spezifische Begriffe ZUERST prüfen:
-    
-    # Bio-Geflügel (41) - sehr spezifisch
+    # Bio-Geflügel (41)
     if "bio" in s and "geflügel" in s:
         return "41"
-    
-    # Wiesenhof/Geflügel (1011) - vor allgemeinem "fleisch"
+
+    # Wiesenhof/Geflügel (1011)
     if "wiesenhof" in s:
         return "1011"
-    if "geflügel" in s:  # nur wenn nicht schon als Bio-Geflügel erkannt
+    if "geflügel" in s:
         return "1011"
-    
-    # Frischfleisch (65) - MUSS vor allgemeinem "fleisch" kommen!
+
+    # Frischfleisch (65)
     if "frischfleisch" in s or "veredlung" in s or "schwein" in s or "pök" in s:
         return "65"
-    
-    # Fleisch/Wurst (21) - allgemeiner Begriff, kommt NACH Frischfleisch
+
+    # Fleisch/Wurst (21)
     if "fleisch" in s or "wurst" in s or "heidemark" in s:
         return "21"
-    
+
     # Avo-Gewürze (0)
     if "avo" in s or "gewürz" in s:
         return "0"
-    
+
     # Werbemittel (91)
     if "werbe" in s or "werbemittel" in s:
         return "91"
-    
+
     # Pfeiffer etc. (22)
     if "pfeiffer" in s or "gmyrek" in s or "siebert" in s or "bard" in s or "mago" in s:
         return "22"
@@ -138,37 +125,29 @@ def detect_bspalten(columns: List[str]):
     Erkennung für Spalten wie:
     "Mo Z Wiesenhof B_Di" / "Mo L Bio B_Mi" / "Mo Wiesenhof B_Di" etc.
     UND auch Spalten OHNE "B": "Mit Z 41 Mo" (nur Tag ZL Gruppe Tag)
-    WICHTIG: Erlaubt optionales Leerzeichen nach B_ (z.B. "Donn 22 B_ Mo")
-    
-    WICHTIG: Wir extrahieren die Gruppe aus dem Spaltennamen, aber klassifizieren
-    später das Sortiment anhand seines tatsächlichen Namens neu!
     """
-    # Pattern MIT "B" - erlaubt optionales Leerzeichen nach B_
     rx_b = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
         r"(?:(Z|L)\s+)?(.+?)\s+B[_ ]\s*(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
         re.IGNORECASE
     )
-    # Pattern OHNE "B" (nur für Z/L Spalten!)
     rx_no_b = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
         r"(Z|L)\s+(.+?)\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
         re.IGNORECASE
     )
-    
+
     mapping = {}
-    
-    # ERSTE PHASE: Verarbeite Spalten OHNE "B" (diese haben Priorität für Z/L!)
-    # WICHTIG: Überspringe Spalten die "B " oder "B_" vor dem letzten Tag haben!
+
+    # Phase 1: ohne B
     for c in columns:
-        # Überspringe Spalten mit "B " oder "B_" - die werden in Phase 2 verarbeitet
         if re.search(r'\sB[_ ]\s*', c, re.IGNORECASE):
             continue
-            
+
         m = rx_no_b.match(c.strip())
         if m:
             day_de = DAY_SHORT_TO_DE.get(m.group(1))
-            zl = m.group(2).upper()  # Z oder L ist required hier
+            zl = m.group(2).upper()
             group_text = m.group(3).strip()
             bestell_de_from_name = DAY_SHORT_TO_DE.get(m.group(4))
 
@@ -179,8 +158,8 @@ def detect_bspalten(columns: List[str]):
                     mapping[key]["zeit"] = c
                 elif zl == "L":
                     mapping[key]["l"] = c
-    
-    # ZWEITE PHASE: Verarbeite Spalten MIT "B" (überschreiben NICHT existierende Z/L!)
+
+    # Phase 2: mit B
     for c in columns:
         m = rx_b.match(c.strip())
         if m:
@@ -193,27 +172,19 @@ def detect_bspalten(columns: List[str]):
                 key = (day_de, group_text, bestell_de_from_name)
                 mapping.setdefault(key, {})
                 if zl == "Z":
-                    # NUR setzen wenn noch keine Zeit-Spalte vorhanden!
                     if "zeit" not in mapping[key]:
                         mapping[key]["zeit"] = c
                 elif zl == "L":
-                    # NUR setzen wenn noch keine L-Spalte vorhanden!
                     if "l" not in mapping[key]:
                         mapping[key]["l"] = c
                 else:
                     mapping[key]["sort"] = c
                     mapping[key]["group_text"] = group_text
-    
+
     return mapping
 
 
 def detect_triplets(columns: List[str]):
-    """
-    Robustere Triplet-Erkennung:
-    "<Tag> <Gruppe> Zeit|Zeitende|Bestellzeitende|Uhrzeit"
-    "<Tag> <Gruppe> Sort|Sortiment"
-    "<Tag> <Gruppe> Tag|Bestelltag"
-    """
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+"
         r"(Zeit|Zeitende|Bestellzeitende|Uhrzeit|Sort|Sortiment|Tag|Bestelltag)$",
@@ -229,9 +200,7 @@ def detect_triplets(columns: List[str]):
         if not day_de:
             continue
 
-        raw_group = m.group(2).strip()
-        # Speichere sowohl den rohen Text als auch die ID
-        group_text = raw_group
+        group_text = m.group(2).strip()
 
         end_key = m.group(3).lower()
         if end_key in ("sort", "sortiment"):
@@ -265,13 +234,43 @@ def detect_ds_triplets(columns: List[str]):
     return tmp
 
 
+def load_logo_data_uri() -> str:
+    """
+    Lädt das NFC-Logo als Base64 Data-URI, damit es im HTML/Print immer verfügbar ist.
+    Sucht im Script-Ordner und zusätzlich in /mnt/data (Streamlit/Container).
+    """
+    candidates = []
+
+    # Script-Ordner (falls als Datei neben dem Script liegt)
+    try:
+        here = Path(__file__).resolve().parent
+        candidates.append(here / "Logo_NORDfrische Center (NFC).png")
+    except Exception:
+        pass
+
+    # aktuelles Working Directory
+    candidates.append(Path.cwd() / "Logo_NORDfrische Center (NFC).png")
+
+    # Container-Pfad (wie bei dir angegeben)
+    candidates.append(Path("/mnt/data/Logo_NORDfrische Center (NFC).png"))
+
+    for p in candidates:
+        try:
+            if p.exists() and p.is_file():
+                b = p.read_bytes()
+                return "data:image/png;base64," + base64.b64encode(b).decode("ascii")
+        except Exception:
+            continue
+
+    return ""
+
+
 # --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT - 4 BEREICHE) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <style>
-  /* Druckseite - WICHTIG: Korrekte A4-Einstellungen */
   @page { 
     size: A4 portrait; 
     margin: 10mm 8mm;
@@ -280,7 +279,6 @@ HTML_TEMPLATE = """<!doctype html>
   *{ box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
   body{ margin:0; background:#0b1220; color:#fff; }
 
-  /* === BILDSCHIRM-ANSICHT === */
   @media screen {
     .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
     .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
@@ -288,7 +286,6 @@ HTML_TEMPLATE = """<!doctype html>
     .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
     .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-    /* Papier Container - Fixed A4 Größe für Bildschirm */
     .paper{
       width: 210mm;
       max-width: 210mm;
@@ -301,7 +298,6 @@ HTML_TEMPLATE = """<!doctype html>
       margin-bottom: 20px;
     }
 
-    /* Scrollbarer Inhalt */
     .paper-content{
       width: 100%;
       height: 100%;
@@ -310,21 +306,18 @@ HTML_TEMPLATE = """<!doctype html>
       overflow-x: hidden;
     }
 
-    /* Scrollbalken-Styling */
     .paper-content::-webkit-scrollbar { width: 10px; }
     .paper-content::-webkit-scrollbar-track { background: #f1f1f1; }
     .paper-content::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
     .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
   }
 
-  /* === DRUCK-ANSICHT === */
   @media print {
     body{ background:#fff !important; margin: 0; padding: 0; }
-    
     .sidebar{ display:none !important; }
     .app{ display:block; padding:0; margin: 0; }
     .wrap{ overflow: visible; padding: 0; margin: 0; }
-    
+
     .paper{
       box-shadow: none;
       margin: 0;
@@ -339,56 +332,44 @@ HTML_TEMPLATE = """<!doctype html>
       print-color-adjust: exact;
       color-adjust: exact;
     }
-    
+
     .paper-content{
       overflow: visible;
       height: auto;
       padding: 0;
       margin: 0;
     }
-    
-    /* WICHTIG: Erzwinge schwarze Farben beim Drucken */
+
     .paper-content, .paper-content * {
       color: #000 !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
       color-adjust: exact !important;
     }
-    
-    /* Tabellen-Borders schwarz */
-    table, th, td {
-      border-color: #000 !important;
-    }
-    
-    /* Hintergrundfarben beibehalten */
-    .day-header {
-      background: #e0e0e0 !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    .tour-table th {
-      background: #eee !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    .main-table th {
-      background: #f2f2f2 !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    /* Roter Titel bleibt rot */
-    .pstd {
-      color: #d0192b !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
+
+    table, th, td { border-color: #000 !important; }
+
+    .day-header { background: #e0e0e0 !important; }
+    .tour-table th { background: #eee !important; }
+    .main-table th { background: #f2f2f2 !important; }
+
+    .pstd { color: #d0192b !important; }
   }
 
-  /* === GEMEINSAME STYLES === */
   .paper-content *{ font-size: 9pt; line-height: 1.15; }
+
+  /* === LOGO === */
+  .logo-wrap{
+    width: 100%;
+    text-align: center;
+    margin: 0 0 2.5mm 0;
+  }
+  .logo{
+    height: 18mm;           /* -> sauber im A4-Header */
+    max-width: 100%;
+    object-fit: contain;
+    display: inline-block;
+  }
 
   .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; }
   .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
@@ -415,8 +396,7 @@ HTML_TEMPLATE = """<!doctype html>
   table.main-table td { border:1px solid #000; padding:3px 4px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; }
 
   .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
-  
-  /* Bereichs-Buttons */
+
   .area-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -424,7 +404,7 @@ HTML_TEMPLATE = """<!doctype html>
     padding: 15px;
     border-bottom: 1px solid rgba(255,255,255,.14);
   }
-  
+
   .area-btn {
     padding: 12px;
     border: 2px solid rgba(255,255,255,.2);
@@ -436,18 +416,17 @@ HTML_TEMPLATE = """<!doctype html>
     transition: all 0.2s;
     text-align: center;
   }
-  
+
   .area-btn:hover {
     background: rgba(255,255,255,.12);
     border-color: rgba(255,255,255,.4);
   }
-  
+
   .area-btn.active {
     background: #4fa3ff;
     border-color: #4fa3ff;
   }
-  
-  /* Verhindere Seitenumbrüche innerhalb von Tabellenzeilen */
+
   @media print {
     tr { page-break-inside: avoid; }
   }
@@ -457,15 +436,14 @@ HTML_TEMPLATE = """<!doctype html>
 <div class="app">
   <div class="sidebar">
     <div style="padding:15px; font-weight:bold; font-size:16px;">Sendeplan Generator</div>
-    
-    <!-- BEREICHS-BUTTONS -->
+
     <div class="area-buttons">
       <div class="area-btn active" id="btn-direkt" onclick="switchArea('direkt')">Direkt</div>
       <div class="area-btn" id="btn-mk" onclick="switchArea('mk')">MK</div>
       <div class="area-btn" id="btn-nms" onclick="switchArea('nms')">HuPa NMS</div>
       <div class="area-btn" id="btn-malchow" onclick="switchArea('malchow')">HuPa Malchow</div>
     </div>
-    
+
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
       <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:10px; border-radius:5px;">
       <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; border-radius:5px;">Anzeigen</button>
@@ -482,6 +460,7 @@ HTML_TEMPLATE = """<!doctype html>
 
 <script>
 const ALL_DATA = __DATA_JSON__;
+const LOGO_SRC = "__LOGO_DATAURI__";
 let currentArea = 'direkt';
 let DATA = ALL_DATA['direkt'] || {};
 let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
@@ -509,8 +488,11 @@ function render(c){
   const tourRow  = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
+  const logoHtml = LOGO_SRC ? `<div class="logo-wrap"><img class="logo" src="${LOGO_SRC}" alt="NORDfrische Center Logo"></div>` : "";
+
   return `<div class="paper">
     <div class="paper-content">
+      ${logoHtml}
       <div class="ptitle">Sende- &amp; Belieferungsplan</div>
       <div class="pstd">${esc(c.plan_typ)}</div>
       <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
@@ -546,15 +528,12 @@ function switchArea(area){
   currentArea = area;
   DATA = ALL_DATA[area] || {};
   ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
-  
-  // Update Button-Styles
+
   document.querySelectorAll('.area-btn').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`btn-${area}`).classList.add('active');
-  
-  // Update Liste
+
   updateList();
-  
-  // Clear input und output
+
   document.getElementById("knr").value = "";
   document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
 }
@@ -577,31 +556,17 @@ function updateList(){
 }
 
 function printAll(){
-  // Bestätigungsdialog
   const count = ORDER.length;
   const areaName = getAreaName(currentArea);
-  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden aus "${areaName}" drucken?`)) {
-    return;
-  }
-  
-  // Rendere alle Kunden
+  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden aus "${areaName}" drucken?`)) return;
+
   let html = "";
-  ORDER.forEach(k => {
-    if(DATA[k]) {
-      html += render(DATA[k]);
-    }
-  });
-  
-  // Zeige alle Kunden im Haupt-Bereich
+  ORDER.forEach(k => { if(DATA[k]) html += render(DATA[k]); });
   document.getElementById("out").innerHTML = html;
-  
-  // Warte kurz damit das Rendering fertig ist, dann drucke
-  setTimeout(() => {
-    window.print();
-  }, 500);
+
+  setTimeout(() => { window.print(); }, 500);
 }
 
-// Initialisiere Liste
 updateList();
 </script>
 </body>
@@ -610,34 +575,30 @@ updateList();
 
 # --- STREAMLIT APP ---
 st.set_page_config(page_title="Sendeplan Generator - 4 Bereiche", layout="wide")
-
 st.title("Sendeplan Generator")
 st.write("Verarbeitet 4 Bereiche: Direkt, MK, HuPa NMS, HuPa Malchow")
 
 up = st.file_uploader("Excel Datei laden", type=["xlsx"])
 if up:
-    # Definiere die 4 Blätter und ihre internen Namen
     SHEETS = {
         'direkt': 'Direkt 1 - 99',
         'mk': 'Hupa MK 882',
         'nms': 'Hupa 2221-4444',
         'malchow': 'Hupa 7773-7779'
     }
-    
+
     all_data = {}
-    
-    # Verarbeite jedes Blatt
+
     for area_key, sheet_name in SHEETS.items():
         st.write(f"Verarbeite: **{sheet_name}**...")
-        
+
         try:
             df = pd.read_excel(up, sheet_name=sheet_name)
         except Exception as e:
             st.error(f"Fehler beim Laden von '{sheet_name}': {e}")
             continue
-            
-        cols = df.columns.tolist()
 
+        cols = df.columns.tolist()
         trip = detect_triplets(cols)
         bmap = detect_bspalten(cols)
         ds_trip = detect_ds_triplets(cols)
@@ -652,7 +613,7 @@ if up:
             for d_de in DAYS_DE:
                 day_items = []
 
-                # 1) Triplets - WICHTIG: Klassifiziere nach tatsächlichem Sortiment-Namen!
+                # 1) Triplets
                 if d_de in trip:
                     for group_text, f in trip[d_de].items():
                         s = norm(r.get(f.get("Sort")))
@@ -660,9 +621,7 @@ if up:
                         tag = norm(r.get(f.get("Tag")))
 
                         if s or t or tag:
-                            # Klassifiziere das Sortiment nach seinem NAMEN, nicht nach Spaltennummer!
                             actual_gid = canon_group_id(s)
-                            
                             day_items.append({
                                 "liefertag": d_de,
                                 "sortiment": s,
@@ -671,27 +630,23 @@ if up:
                                 "prio": SORT_PRIO.get(actual_gid, 50)
                             })
 
-                # 2) B-Spalten - WICHTIG: Verwende L-Spalte für Bestelltag (wenn vorhanden)!
+                # 2) B-Spalten
                 keys = [k for k in bmap.keys() if k[0] == d_de]
                 for k in keys:
                     f = bmap[k]
-                    
                     s = norm(r.get(f.get("sort", "")))
                     z = safe_time(r.get(f.get("zeit", "")))
-                    
-                    # Verwende L-Spalte für Bestelltag (wenn vorhanden), sonst Spaltennamen
+
                     l_col = f.get("l")
                     if l_col:
                         tag = norm(r.get(l_col, ""))
                         if not tag:
-                            tag = k[2]  # Fallback auf Spaltennamen wenn L-Spalte leer
+                            tag = k[2]
                     else:
-                        tag = k[2]  # Kein L-Spalte -> verwende Spaltennamen
+                        tag = k[2]
 
                     if s or z:
-                        # Klassifiziere das Sortiment nach seinem NAMEN!
                         actual_gid = canon_group_id(s)
-                        
                         day_items.append({
                             "liefertag": d_de,
                             "sortiment": s,
@@ -713,7 +668,7 @@ if up:
                                 "sortiment": s,
                                 "bestelltag": tag,
                                 "bestellschluss": t,
-                                "prio": 5.5  # Nach Avo-Gewürze (5), vor Werbemittel (6)
+                                "prio": 5.5
                             })
 
                 day_items.sort(key=lambda x: x["prio"])
@@ -731,14 +686,23 @@ if up:
                 "tours": {d: norm(r.get(TOUR_COLS[d], "")) for d in DAYS_DE},
                 "bestell": bestell
             }
-        
-        # Speichere Daten für diesen Bereich
+
         all_data[area_key] = data
         st.success(f"✓ {sheet_name}: {len(data)} Kunden verarbeitet")
-    
-    # Generiere HTML mit allen 4 Bereichen
-    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(',', ':')))
-    
+
+    logo_data_uri = load_logo_data_uri()
+
+    html = HTML_TEMPLATE.replace(
+        "__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(',', ':'))
+    ).replace(
+        "__LOGO_DATAURI__", logo_data_uri
+    )
+
     st.write("---")
     st.write(f"**Gesamt:** {sum(len(all_data[k]) for k in all_data)} Kunden in {len(all_data)} Bereichen")
-    st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan_4_bereiche.html", mime="text/html")
+    st.download_button(
+        "Download Sendeplan (A4)",
+        data=html,
+        file_name="sendeplan_4_bereiche.html",
+        mime="text/html"
+    )
