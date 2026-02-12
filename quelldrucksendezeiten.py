@@ -214,666 +214,160 @@ HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sende- & Belieferungsplan</title>
+<title>Sendeplan</title>
 
 <style>
-  :root{
-    --bg: #0b1220;
-    --panel: rgba(255,255,255,0.08);
-    --panel2: rgba(255,255,255,0.06);
-    --stroke: rgba(255,255,255,0.16);
-    --text: rgba(255,255,255,0.92);
-    --muted: rgba(255,255,255,0.62);
-    --accent: #4fa3ff;
-    --accent2: #7cf7c2;
-    --danger: #ff5b6e;
+@page { size:A4; margin:10mm; }
 
-    --paper: #ffffff;
-    --ink: #0c0f16;
-    --ink2: #32384a;
-  }
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  margin:0;
+  background:#111;
+}
 
-  *{ box-sizing: border-box; }
-  body{
-    margin:0;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
-    background: radial-gradient(1200px 600px at 20% 0%, rgba(79,163,255,0.22), transparent 55%),
-                radial-gradient(900px 500px at 80% 10%, rgba(124,247,194,0.18), transparent 55%),
-                radial-gradient(900px 700px at 40% 100%, rgba(255,91,110,0.12), transparent 55%),
-                var(--bg);
-    color: var(--text);
-  }
+/* ---------- SCREEN UI ---------- */
+.app{display:grid;grid-template-columns:320px 1fr;gap:10px;padding:10px}
+.sidebar{background:#222;color:#fff;padding:10px;border-radius:10px}
+input,button{padding:8px;margin:4px 0;width:100%}
+.main{display:flex;justify-content:center}
 
-  .app{
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 18px;
-    padding: 18px;
-  }
+/* ---------- A4 PAGE ---------- */
+.paper{
+  width:190mm;
+  height:277mm;     /* A4 minus margins */
+  background:#fff;
+  color:#000;
+  overflow:hidden;
+  padding:6mm;
+  box-sizing:border-box;
+}
 
-  .sidebar, .main{
-    border: 1px solid var(--stroke);
-    background: linear-gradient(180deg, var(--panel), var(--panel2));
-    border-radius: 18px;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    overflow: hidden;
-  }
+/* Dynamische Schriftgrößen (werden per JS gesetzt) */
+.paper{ --fs:11pt; }
+.paper *{ font-size:var(--fs); line-height:1.15; }
 
-  .side-head{
-    padding: 16px 16px 10px 16px;
-    border-bottom: 1px solid var(--stroke);
-  }
-  .title{
-    font-size: 16px;
-    font-weight: 900;
-    letter-spacing: .2px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .badge{
-    font-size: 12px;
-    font-weight: 800;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(79,163,255,0.16);
-    border: 1px solid rgba(79,163,255,0.30);
-    color: rgba(255,255,255,0.88);
-  }
-  .subtitle{
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.35;
-  }
+h1{font-size:16pt;margin:0;text-align:center}
+h2{font-size:14pt;margin:2mm 0;text-align:center;color:#c00}
+h3{font-size:10pt;margin:0;text-align:center}
 
-  .search{
-    padding: 14px 16px 16px 16px;
-    display:flex;
-    flex-direction: column;
-    gap:10px;
-  }
+.header{
+  display:flex;
+  justify-content:space-between;
+  margin:4mm 0;
+}
 
-  .field{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--stroke);
-    background: rgba(0,0,0,0.18);
-  }
-  .field input{
-    width:100%;
-    border:none;
-    outline:none;
-    background: transparent;
-    color: var(--text);
-    font-size: 14px;
-  }
-  .field input::placeholder{ color: rgba(255,255,255,0.45); }
+table{
+  width:100%;
+  border-collapse:collapse;
+}
 
-  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
-  .btn{
-    border:none;
-    outline:none;
-    cursor:pointer;
-    font-weight: 900;
-    letter-spacing: .2px;
-    font-size: 13px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    color: var(--text);
-    background: rgba(255,255,255,0.08);
-    border: 1px solid var(--stroke);
-    transition: transform .08s ease, background .12s ease;
-  }
-  .btn:hover{ background: rgba(255,255,255,0.12); }
-  .btn:active{ transform: translateY(1px); }
-  .btn.primary{
-    background: linear-gradient(135deg, rgba(79,163,255,0.35), rgba(124,247,194,0.22));
-    border: 1px solid rgba(124,247,194,0.32);
-  }
-  .btn.danger{
-    background: rgba(255,91,110,0.14);
-    border: 1px solid rgba(255,91,110,0.28);
-  }
+th,td{
+  border:1px solid #000;
+  padding:1.2mm;
+  vertical-align:top;
+}
 
-  .list{
-    border-top: 1px solid var(--stroke);
-    max-height: calc(100vh - 240px);
-    overflow:auto;
-  }
-  .item{
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    cursor:pointer;
-    display:flex;
-    flex-direction: column;
-    gap:4px;
-  }
-  .item:hover{ background: rgba(255,255,255,0.06); }
-  .item.active{
-    background: rgba(79,163,255,0.14);
-    border-left: 3px solid rgba(79,163,255,0.85);
-    padding-left: 13px;
-  }
-  .item .k{
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 800;
-  }
-  .item .n{
-    font-size: 13px;
-    font-weight: 950;
-    color: rgba(255,255,255,0.92);
-    line-height: 1.25;
-  }
-  .item .a{
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.25;
-  }
+th{background:#eee}
 
-  .main-head{
-    padding: 16px;
-    border-bottom: 1px solid var(--stroke);
-    display:flex;
-    align-items:center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .main-head .meta{
-    display:flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .main-head .meta .big{
-    font-size: 14px;
-    font-weight: 950;
-    letter-spacing: .2px;
-  }
-  .main-head .meta .small{
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .paper-wrap{
-    padding: 16px;
-    display:flex;
-    justify-content: center;
-  }
-
-  /* ---------- PAPER ---------- */
-  .paper-outer{
-    width: 210mm;
-    height: 297mm;
-    position: relative;
-  }
-  /* paper is scaled inside outer so outer remains exact A4 */
-  .paper{
-    width: 210mm;
-    height: 297mm;
-    background: var(--paper);
-    color: var(--ink);
-    border-radius: 14px;
-    box-shadow: 0 30px 90px rgba(0,0,0,0.45);
-    overflow: hidden;
-    border: 1px solid rgba(0,0,0,0.10);
-
-    transform-origin: top left;
-    transform: scale(var(--scale, 1));
-  }
-
-  .paper-inner{
-    padding: 14mm 14mm 12mm 14mm;
-  }
-
-  .p-title{
-    text-align:center;
-    font-size: 18pt;
-    font-weight: 950;
-    margin: 0;
-    letter-spacing: .2px;
-  }
-  .p-standard{
-    text-align:center;
-    font-size: 16pt;
-    font-weight: 1000;
-    color: #d0192b;
-    margin: 2mm 0 2mm 0;
-  }
-  .p-sub{
-    text-align:center;
-    font-size: 10.6pt;
-    margin: 0 0 7mm 0;
-    color: var(--ink2);
-    font-weight: 800;
-  }
-
-  .p-head{
-    display:flex;
-    justify-content: space-between;
-    gap: 14mm;
-    margin-bottom: 6mm;
-  }
-  .p-addr{
-    font-size: 10.8pt;
-    line-height: 1.35;
-  }
-  .p-addr .name{
-    font-weight: 950;
-    margin-bottom: 1mm;
-  }
-  .p-meta{
-    font-size: 10.8pt;
-    line-height: 1.35;
-    min-width: 70mm;
-  }
-  .p-meta b{ font-weight: 950; }
-
-  .p-lines{
-    font-size: 10.8pt;
-    line-height: 1.4;
-    margin: 0 0 6mm 0;
-    color: var(--ink);
-  }
-  .p-lines b{ font-weight: 950; }
-
-  table{
-    width:100%;
-    border-collapse: collapse;
-    font-size: 10.3pt;
-  }
-  thead th{
-    text-align:left;
-    border: 1px solid #111;
-    padding: 2.4mm 2.2mm;
-    font-weight: 1000;
-    background: #f4f6fb;
-  }
-  tbody td{
-    border: 1px solid #111;
-    padding: 2.4mm 2.2mm;
-    vertical-align: top;
-  }
-  .col-day{ width: 17%; font-weight: 1000; }
-  .col-sort{ width: 52%; }
-  .col-tag{ width: 16%; white-space: nowrap; }
-  .col-zeit{ width: 15%; white-space: nowrap; }
-
-  .ds-block{
-    margin-top: 6mm;
-    border: 1px solid rgba(0,0,0,0.20);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .ds-head{
-    padding: 8px 10px;
-    background: #f4f6fb;
-    font-weight: 1000;
-    font-size: 10.4pt;
-    border-bottom: 1px solid rgba(0,0,0,0.20);
-  }
-  .ds-body{
-    padding: 8px 10px;
-    font-size: 10.1pt;
-    color: var(--ink);
-    line-height: 1.45;
-  }
-
-  .empty{
-    padding: 24px;
-    text-align:center;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .toast{
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-
-  @media (max-width: 980px){
-    .app{ grid-template-columns: 1fr; }
-    .paper-outer{ width: 100%; height: auto; }
-    .paper{
-      width: 100%;
-      height: auto;
-      transform: none;
-      border-radius: 14px;
-    }
-  }
-
-  /* PRINT: Genau A4, pro Kunde 1 Seite */
-  @page { size: A4; margin: 0; }
-
-  @media print{
-    body{ background: #fff !important; }
-    .sidebar, .main-head{ display:none !important; }
-    .app{ display:block; padding:0; }
-    .main{ border:none; background:transparent; }
-    .paper-wrap{ padding:0; justify-content: flex-start; }
-
-    .paper-outer{
-      width: 210mm !important;
-      height: 297mm !important;
-      page-break-after: always;
-    }
-    .paper{
-      width: 210mm !important;
-      height: 297mm !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      border: none !important;
-      overflow: hidden !important;
-      transform-origin: top left;
-      /* transform scale is set per paper via CSS var --scale */
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-    }
-  }
+/* PRINT */
+@media print{
+  body{background:#fff}
+  .sidebar{display:none}
+  .app{display:block;padding:0}
+  .paper{box-shadow:none}
+}
 </style>
 </head>
 
 <body>
+
 <div class="app">
-  <div class="sidebar">
-    <div class="side-head">
-      <div class="title">Sende- & Belieferungsplan <span class="badge">A4 · Auto-Fit</span></div>
-      <div class="subtitle">
-        Nichts wird rausgefiltert. Alles wird gedruckt.<br>
-        Falls zu viel Inhalt: automatische Skalierung auf 1 Seite.
-      </div>
-    </div>
+<div class="sidebar">
+<input id="knr" placeholder="Kundennummer">
+<button onclick="showOne()">Anzeigen</button>
+<button onclick="showAll()">Alle</button>
+<button onclick="window.print()">Drucken</button>
+</div>
 
-    <div class="search">
-      <div class="field">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M21 21l-4.3-4.3m1.3-5.2a7.2 7.2 0 11-14.4 0 7.2 7.2 0 0114.4 0z"
-                stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input id="knr" placeholder="Kundennummer (z.B. 88130)" inputmode="numeric" />
-      </div>
-
-      <div class="btnrow">
-        <button class="btn primary" onclick="showOne()">Anzeigen</button>
-        <button class="btn" onclick="showAll()">Alle rendern</button>
-        <button class="btn" onclick="window.print()">Drucken</button>
-        <button class="btn danger" onclick="clearView()">Leeren</button>
-      </div>
-      <div class="toast" id="hint"></div>
-    </div>
-
-    <div class="list" id="list"></div>
-  </div>
-
-  <div class="main">
-    <div class="main-head">
-      <div class="meta">
-        <div class="big" id="mainTitle">Vorschau</div>
-        <div class="small" id="mainSub">Noch kein Kunde ausgewählt.</div>
-      </div>
-      <div class="meta" style="text-align:right;">
-        <div class="big" id="count"></div>
-        <div class="small">Kunden im Dokument</div>
-      </div>
-    </div>
-
-    <div class="paper-wrap">
-      <div id="out" class="empty">
-        Suche links nach einer Kundennummer oder wähle einen Eintrag aus der Liste.
-      </div>
-    </div>
-  </div>
+<div class="main">
+<div id="out"></div>
+</div>
 </div>
 
 <script>
 const DATA = __DATA_JSON__;
-const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
-let activeKey = null;
 
-function esc(s){
-  return String(s ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
-}
+/* -------- AUTO FIT (ECHT) -------- */
+function autoFit(paper){
+  let fs = 11;
+  paper.style.setProperty("--fs", fs+"pt");
 
-function daysAndTours(c){
-  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
-  // Tage aus Bestellzeilen (inkl. Deutsche See) + Touren
-  const daysFromBestell = new Set((c.bestell||[]).map(x => x.liefertag).filter(Boolean));
-  const daysFromTours = new Set(days.filter(d => (c.tours && String(c.tours[d]||"").trim() !== "")));
-  const active = days.filter(d => daysFromBestell.has(d) || daysFromTours.has(d));
-
-  const dayLine = active.length ? active.join(" ") : "-";
-  const tourLine = active.length
-    ? active.map(d => (c.tours && String(c.tours[d]||"").trim() !== "" ? esc(c.tours[d]) : "—")).join(" ")
-    : "-";
-
-  return { dayLine, tourLine };
-}
-
-function buildRows(c){
-  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
-  const byDay = {};
-  for(const it of (c.bestell||[])){
-    if(!byDay[it.liefertag]) byDay[it.liefertag] = [];
-    byDay[it.liefertag].push(it);
+  // so lange verkleinern bis Inhalt passt
+  while(paper.scrollHeight > paper.clientHeight && fs > 7){
+    fs -= 0.5;
+    paper.style.setProperty("--fs", fs+"pt");
   }
-
-  let rows = "";
-  for(const d of days){
-    const arr = byDay[d] || [];
-    // NICHTS FILTERN: auch leere strings werden als Zeile sichtbar, falls vorhanden.
-    const sortLines = arr.map(x => esc(x.sortiment)).join("<br>");
-    const tagLines  = arr.map(x => esc(x.bestelltag)).join("<br>");
-    const zeitLines = arr.map(x => esc(x.bestellschluss)).join("<br>");
-
-    rows += `
-      <tr>
-        <td class="col-day">${esc(d)}</td>
-        <td class="col-sort">${sortLines || "&nbsp;"}</td>
-        <td class="col-tag">${tagLines || "&nbsp;"}</td>
-        <td class="col-zeit">${zeitLines || "&nbsp;"}</td>
-      </tr>
-    `;
-  }
-  return rows;
 }
 
-function renderPaper(c){
-  const {dayLine, tourLine} = daysAndTours(c);
+/* -------- RENDER -------- */
+function render(c){
+  const rows = c.bestell.map(x=>`
+    <tr>
+      <td>${x.liefertag}</td>
+      <td>${x.sortiment}</td>
+      <td>${x.bestelltag}</td>
+      <td>${x.bestellschluss}</td>
+    </tr>`).join("");
 
-  let dsHtml = "";
-  if (c.ds && c.ds.length){
-    // DS NICHT FILTERN
-    const lines = c.ds.map(it => `
-      <div><b>${esc(it.ds_key)}:</b> ${esc(it.sortiment)} — <b>${esc(it.bestelltag)}</b> · ${esc(it.bestellschluss)}</div>
-    `).join("");
-    dsHtml = `
-      <div class="ds-block">
-        <div class="ds-head">Durchsteck (DS)</div>
-        <div class="ds-body">${lines}</div>
+  const html = `
+  <div class="paper">
+    <h1>Sende- & Belieferungsplan</h1>
+    <h2>${c.plan_typ}</h2>
+    <h3>${c.name} ${c.bereich}</h3>
+
+    <div class="header">
+      <div>
+        <b>${c.name}</b><br>
+        ${c.strasse}<br>
+        ${c.plz} ${c.ort}
       </div>
-    `;
-  }
-
-  return `
-  <div class="paper-outer">
-    <div class="paper" style="--scale: 1">
-      <div class="paper-inner">
-        <div class="p-title">Sende- &amp; Belieferungsplan</div>
-        <div class="p-standard">${esc(c.plan_typ || "Standard")}</div>
-        <div class="p-sub">${esc(c.name)} ${esc(c.bereich || "Alle Sortimente Fleischwerk")}</div>
-
-        <div class="p-head">
-          <div class="p-addr">
-            <div class="name">${esc(c.name)}</div>
-            <div>${esc(c.strasse)}</div>
-            <div>${esc(c.plz)} ${esc(c.ort)}</div>
-          </div>
-          <div class="p-meta">
-            <div><b>Kunden-Nr.:</b> ${esc(c.kunden_nr)}</div>
-            <div><b>Fachberater:</b> ${esc(c.fachberater || "")}</div>
-          </div>
-        </div>
-
-        <div class="p-lines">
-          <div><b>Liefertag:</b> ${dayLine}</div>
-          <div><b>Tour:</b> ${tourLine}</div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Liefertag</th>
-              <th>Sortiment</th>
-              <th>Bestelltag</th>
-              <th>Bestellzeitende</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${buildRows(c)}
-          </tbody>
-        </table>
-
-        ${dsHtml}
+      <div>
+        Kunden-Nr.: ${c.kunden_nr}<br>
+        Fachberater: ${c.fachberater}
       </div>
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Liefertag</th>
+          <th>Sortiment</th>
+          <th>Bestelltag</th>
+          <th>Bestellzeitende</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
   </div>`;
-}
 
-/* ---------- AUTO-FIT: 1 A4 pro Kunde, ohne Abschneiden ---------- */
-function fitPaper(outer){
-  const paper = outer.querySelector(".paper");
-  const inner = outer.querySelector(".paper-inner");
-  if(!paper || !inner) return;
-
-  // Reset scale
-  paper.style.setProperty("--scale", 1);
-
-  // We need to ensure scaled content fits exactly within A4 height/width.
-  // We'll compute required scale based on inner scroll size vs available.
-  const outerW = outer.clientWidth;
-  const outerH = outer.clientHeight;
-
-  // Unscaled size
-  const contentW = inner.scrollWidth;
-  const contentH = inner.scrollHeight;
-
-  // Available size inside paper is paper's box (same as outer)
-  // Scale must satisfy: contentW*scale <= outerW and contentH*scale <= outerH
-  const scaleW = outerW / Math.max(contentW, 1);
-  const scaleH = outerH / Math.max(contentH, 1);
-
-  // choose smaller, but never upscale above 1
-  let s = Math.min(1, scaleW, scaleH);
-
-  // guard: don't go absurdly small; still apply though
-  if (s < 0.55) s = 0.55;
-
-  paper.style.setProperty("--scale", s.toFixed(4));
-}
-
-function fitAll(){
-  document.querySelectorAll(".paper-outer").forEach(fitPaper);
-  // Re-run once after fonts/layout settle
-  requestAnimationFrame(() => document.querySelectorAll(".paper-outer").forEach(fitPaper));
-}
-
-function setMainHeader(c){
-  document.getElementById("mainTitle").textContent = `Vorschau: ${c.kunden_nr}`;
-  document.getElementById("mainSub").textContent = `${c.name} · ${c.plz} ${c.ort}`;
-}
-
-function setHint(msg){
-  document.getElementById("hint").textContent = msg || "";
-}
-
-function setActive(key){
-  activeKey = key;
-  const list = document.getElementById("list").querySelectorAll(".item");
-  list.forEach(el => el.classList.toggle("active", el.dataset.key === key));
+  return html;
 }
 
 function showOne(){
-  const knr = document.getElementById("knr").value.trim();
-  const out = document.getElementById("out");
-  if(!knr){
-    out.className = "empty";
-    out.innerHTML = "Bitte eine Kundennummer eingeben.";
-    setHint("");
-    return;
-  }
-  const c = DATA[knr];
-  if(!c){
-    out.className = "empty";
-    out.innerHTML = `Kundennummer <b>${esc(knr)}</b> nicht gefunden.`;
-    setHint(`Vorhanden: ${ORDER.length} Kunden`);
-    return;
-  }
-  out.className = "";
-  out.innerHTML = renderPaper(c);
-  setMainHeader(c);
-  setHint("Auto-Fit aktiv. Druck: „Drucken“.");
-  setActive(knr);
-  fitAll();
+  const k=document.getElementById("knr").value.trim();
+  if(!DATA[k]) return;
+  const out=document.getElementById("out");
+  out.innerHTML=render(DATA[k]);
+  autoFit(out.firstElementChild);
 }
 
 function showAll(){
-  const out = document.getElementById("out");
-  const html = ORDER.map(k => renderPaper(DATA[k])).join("");
-  out.className = "";
-  out.innerHTML = html;
-  document.getElementById("mainTitle").textContent = "Massendruck (alle Kunden)";
-  document.getElementById("mainSub").textContent = `${ORDER.length} Seiten gerendert`;
-  setHint("Alle Seiten gerendert. Auto-Fit aktiv. Jetzt „Drucken“.");
-  setActive(null);
-  fitAll();
+  const out=document.getElementById("out");
+  out.innerHTML=Object.values(DATA).map(render).join("");
+  document.querySelectorAll(".paper").forEach(autoFit);
 }
-
-function clearView(){
-  const out = document.getElementById("out");
-  out.className = "empty";
-  out.innerHTML = "Suche links nach einer Kundennummer oder wähle einen Eintrag aus der Liste.";
-  document.getElementById("mainTitle").textContent = "Vorschau";
-  document.getElementById("mainSub").textContent = "Noch kein Kunde ausgewählt.";
-  setHint("");
-  setActive(null);
-}
-
-function buildList(){
-  const list = document.getElementById("list");
-  list.innerHTML = ORDER.map(k => {
-    const c = DATA[k];
-    return `
-      <div class="item" data-key="${esc(k)}" onclick="pick('${esc(k)}')">
-        <div class="k">Kunden-Nr. ${esc(c.kunden_nr)}</div>
-        <div class="n">${esc(c.name)}</div>
-        <div class="a">${esc(c.plz)} ${esc(c.ort)}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-function pick(k){
-  document.getElementById("knr").value = k;
-  showOne();
-}
-
-document.getElementById("knr").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter") showOne();
-});
-
-document.getElementById("count").textContent = ORDER.length;
-buildList();
 </script>
+
 </body>
 </html>
 """
