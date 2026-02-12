@@ -258,108 +258,118 @@ def detect_ds_triplets(columns: List[str]):
     return tmp
 
 
-# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN) ---
+# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <style>
-  /* Druckseite */
-  @page { size: A4; margin: 8mm; }
+  /* Druckseite - WICHTIG: Korrekte A4-Einstellungen */
+  @page { 
+    size: A4 portrait; 
+    margin: 10mm 8mm;
+  }
 
   *{ box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
   body{ margin:0; background:#0b1220; color:#fff; }
 
-  .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
-  .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
-  .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
-  .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
-  .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  /* === BILDSCHIRM-ANSICHT === */
+  @media screen {
+    .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
+    .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
+    .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
+    .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
+    .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-  /* Papier Container - Fixed A4 Größe */
-  .paper{
-    width: 210mm;
-    height: 297mm;                 /* Fixed A4 Höhe */
-    background:#fff;
-    color:#000;
-    box-shadow: 0 0 20px rgba(0,0,0,.5);
-    position: relative;
-    overflow: hidden;              /* Verhindert overflow außerhalb */
-  }
+    /* Papier Container - Fixed A4 Größe für Bildschirm */
+    .paper{
+      width: 210mm;
+      max-width: 210mm;
+      height: 297mm;
+      background:#fff;
+      color:#000;
+      box-shadow: 0 0 20px rgba(0,0,0,.5);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
 
-  /* Scrollbarer Inhalt */
-  .paper-content{
-    width: 100%;
-    height: 100%;
-    padding: 8mm;                  /* Padding im scrollbaren Bereich */
-    overflow-y: auto;              /* Vertikaler Scrollbalken */
-    overflow-x: hidden;
-  }
+    /* Scrollbarer Inhalt */
+    .paper-content{
+      width: 100%;
+      height: 100%;
+      padding: 10mm 8mm;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
 
-  /* Scrollbalken-Styling */
-  .paper-content::-webkit-scrollbar {
-    width: 10px;
-  }
-  .paper-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-  .paper-content::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 5px;
-  }
-  .paper-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    /* Scrollbalken-Styling */
+    .paper-content::-webkit-scrollbar { width: 10px; }
+    .paper-content::-webkit-scrollbar-track { background: #f1f1f1; }
+    .paper-content::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
+    .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
   }
 
-  /* Kompaktere Schriftgrößen */
-  .paper-content *{ font-size: 9pt; line-height: 1.2; }
+  /* === DRUCK-ANSICHT === */
+  @media print {
+    body{ background:#fff !important; margin: 0; padding: 0; }
+    
+    .sidebar{ display:none !important; }
+    .app{ display:block; padding:0; margin: 0; }
+    .wrap{ overflow: visible; padding: 0; margin: 0; }
+    
+    .paper{
+      box-shadow: none;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      overflow: visible;
+      page-break-after: always;
+      background: #fff;
+    }
+    
+    .paper-content{
+      overflow: visible;
+      height: auto;
+      padding: 0;
+      margin: 0;
+    }
+  }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.4em; margin:0 0 1mm 0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.1em; }
+  /* === GEMEINSAME STYLES === */
+  .paper-content *{ font-size: 9pt; line-height: 1.15; }
+
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
   .psub{ text-align:center; color:#333; margin: 0 0 2mm 0; font-weight:700; font-size:0.95em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:6mm;
+    gap:5mm;
     margin-bottom:2mm;
     border-bottom:1.5px solid #000;
     padding-bottom:1.5mm;
     font-size:8.5pt;
   }
 
-  .tour-info { margin-bottom: 2mm; }
+  .tour-info { margin-bottom:2mm; }
 
-  .tour-table { width:100%; border-collapse: collapse; margin-top: 1mm; table-layout: fixed; }
-  .tour-table th { background:#eee; font-size:0.8em; padding:1px 0; border:1px solid #000; }
-  .tour-table td { border:1px solid #000; padding:3px 0; text-align:center; font-weight:800; font-size:0.95em; }
+  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .tour-table th { background:#eee; font-size:0.8em; padding:2px 1px; border:1px solid #000; font-weight:700; }
+  .tour-table td { border:1px solid #000; padding:3px 1px; text-align:center; font-weight:800; font-size:0.9em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border:2px solid #000; margin-top:2mm; }
-  table.main-table th { border:1px solid #000; padding:4px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
-  table.main-table td { border:1px solid #000; padding:4px 4px; vertical-align: top; word-wrap: break-word; overflow-wrap:anywhere; font-size:0.9em; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:2mm; }
+  table.main-table th { border:1px solid #000; padding:3px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
+  table.main-table td { border:1px solid #000; padding:3px 4px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; }
 
   .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
-
-  @media print{
-    body{ background:#fff !important; }
-    .sidebar{ display:none !important; }
-    .app{ display:block; padding:0; }
-    .wrap{ overflow: visible; padding: 0; }
-    .paper{
-      box-shadow:none;
-      margin:0;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      page-break-after: always;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .paper-content{
-      overflow: visible;
-      height: auto;
-      padding: 8mm;
-    }
+  
+  /* Verhindere Seitenumbrüche innerhalb von Tabellenzeilen */
+  @media print {
+    tr { page-break-inside: avoid; }
   }
 </style>
 </head>
