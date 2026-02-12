@@ -35,9 +35,10 @@ DAY_SHORT_TO_DE = {
 # 3. Bio-Geflügel (41)
 # 4. Frischfleisch Veredlung (65)
 # 5. Avo-Gewürze (0)
-# 6. Werbemittel (91)
-# 7. Pfeiffer etc. (22)
-SORT_PRIO = {"21": 0, "1011": 1, "41": 2, "65": 3, "0": 4, "91": 5, "22": 6}
+# 6. Avo-Gewürze (0)
+# 7. Werbemittel (91)
+# WICHTIG: Pfeiffer (22) kommt nach Wiesenhof (1011), vor Bio (41) - siehe Donnerstag im richtigen PDF!
+SORT_PRIO = {"21": 0, "1011": 1, "22": 2, "41": 3, "65": 4, "0": 5, "91": 6}
 
 TOUR_COLS = {
     "Montag": "Mo",
@@ -137,14 +138,15 @@ def detect_bspalten(columns: List[str]):
     Erkennung für Spalten wie:
     "Mo Z Wiesenhof B_Di" / "Mo L Bio B_Mi" / "Mo Wiesenhof B_Di" etc.
     UND auch Spalten OHNE "B": "Mit Z 41 Mo" (nur Tag ZL Gruppe Tag)
+    WICHTIG: Erlaubt optionales Leerzeichen nach B_ (z.B. "Donn 22 B_ Mo")
     
     WICHTIG: Wir extrahieren die Gruppe aus dem Spaltennamen, aber klassifizieren
     später das Sortiment anhand seines tatsächlichen Namens neu!
     """
-    # Pattern MIT "B"
+    # Pattern MIT "B" - erlaubt optionales Leerzeichen nach B_
     rx_b = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
-        r"(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
+        r"(?:(Z|L)\s+)?(.+?)\s+B[_ ]\s*(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
         re.IGNORECASE
     )
     # Pattern OHNE "B" (nur für Z/L Spalten!)
@@ -706,7 +708,7 @@ if up:
                                 "sortiment": s,
                                 "bestelltag": tag,
                                 "bestellschluss": t,
-                                "prio": 4.5  # Zwischen Avo-Gewürze (4) und Werbemittel (5)
+                                "prio": 5.5  # Nach Avo-Gewürze (5), vor Werbemittel (6)
                             })
 
                 day_items.sort(key=lambda x: x["prio"])
