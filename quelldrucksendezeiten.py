@@ -1,6 +1,6 @@
 # app.py
 # ------------------------------------------------------------
-# Excel -> Standalone-HTML (KOMPLETT: B-Spalten, Tripel & Deutsche See)
+# Excel -> Standalone-HTML (KOMPLETT: Fachberater, Touren pro Wochentag, B-Spalten & DS)
 # ------------------------------------------------------------
 
 import json
@@ -21,6 +21,7 @@ DAY_SHORT_TO_DE = {
     "Sa": "Samstag", "Sam": "Samstag",
 }
 
+# Mapping für die Tour-Spalten in der Excel (Mo, Die, Mitt, Don, Fr, Sam)
 TOUR_COLS = {
     "Montag": "Mo", "Dienstag": "Die", "Mittwoch": "Mitt",
     "Donnerstag": "Don", "Freitag": "Fr", "Samstag": "Sam",
@@ -42,11 +43,6 @@ def normalize_time(s) -> str:
     if "uhr" not in s.lower() and re.fullmatch(r"\d{1,2}:\d{2}", s):
         return s + " Uhr"
     return s
-
-def group_sort_key(g: str):
-    g = g.strip()
-    if g.isdigit(): return (0, int(g))
-    return (1, g.lower())
 
 def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
@@ -102,23 +98,31 @@ HTML_TEMPLATE = """<!doctype html>
   .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
   .item:hover{ background:rgba(255,255,255,0.08); }
   .wrap{ overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; height:100%; }
+  
   .paper{
     width:210mm; height:297mm; min-height:297mm; background:white; color:black; padding:12mm;
     position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); page-break-after: always;
     display:flex; flex-direction:column; --fs: 10.5pt;
   }
   .paper * { font-size: var(--fs); line-height: 1.2; }
-  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.6em; margin:0; }
   .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; }
-  .psub{ text-align:center; color:#555; margin-bottom:5mm; }
+  .psub{ text-align:center; color:#555; margin-bottom:5mm; font-weight:bold; }
+  
+  .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom: 1px solid #eee; padding-bottom: 3mm; }
+  .tour-bar { display: flex; background: #f9f9f9; border: 1px solid #ddd; margin-bottom: 4mm; padding: 2mm; border-radius: 4px; justify-content: space-around; }
+  .tour-item { text-align: center; font-size: 0.85em; }
+  .tour-item b { display: block; font-size: 0.75em; color: #666; text-transform: uppercase; }
+
   table{ width:100%; border-collapse:collapse; }
   th, td{ border:1px solid #000; padding:1.5mm; text-align:left; vertical-align:top; }
-  th{ background:#f2f2f2; }
-  .ds-tag { color: #0056b3; font-weight: bold; }
+  th{ background:#f2f2f2; font-weight:bold; }
+  .ds-tag { color: #0056b3; font-weight: bold; font-style: italic; }
+
   @media print{
     .sidebar{ display:none; }
     .app{ display:block; padding:0; }
-    .paper{ box-shadow:none; margin:0; }
+    .paper{ box-shadow:none; margin:0; border:none; }
   }
 </style>
 </head>
@@ -127,7 +131,7 @@ HTML_TEMPLATE = """<!doctype html>
   <div class="sidebar">
     <div style="padding:15px"><b>Sendeplan Generator</b></div>
     <div style="padding:15px; display:flex; flex-direction:column; gap:8px;">
-      <input id="knr" placeholder="Kunden-Nr..." style="padding:8px; border-radius:5px; border:none;">
+      <input id="knr" placeholder="Kunden-Nr..." style="padding:8px; border-radius:5px; border:none; width:100%;">
       <button onclick="showOne()" style="padding:8px; cursor:pointer;">Anzeigen</button>
       <button onclick="showAll()" style="padding:8px; cursor:pointer;">Alle laden</button>
       <button onclick="window.print()" style="padding:8px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer;">Drucken</button>
@@ -146,6 +150,7 @@ function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
 function render(c){
   const byDay = {};
   c.bestell.forEach(it => { if(!byDay[it.liefertag]) byDay[it.liefertag]=[]; byDay[it.liefertag].push(it); });
+  
   const rows = DAYS.map(d => {
     const items = byDay[d] || [];
     return `<tr>
@@ -156,25 +161,48 @@ function render(c){
     </tr>`;
   }).join("");
 
+  const tourHtml = DAYS.map(d => `
+    <div class="tour-item">
+      <b>${d.substring(0,2)}</b>
+      ${esc(c.tours[d] || "—")}
+    </div>
+  `).join("");
+
   return `<div class="paper">
     <div class="ptitle">Sende- &amp; Belieferungsplan</div>
     <div class="pstd">${esc(c.plan_typ)}</div>
-    <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:5mm;">
+    <div class="psub">${esc(c.bereich)}</div>
+    
+    <div class="head-box">
       <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
-      <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Tour: ${DAYS.map(d=>c.tours[d]).filter(x=>x).join("/")}</div>
+      <div style="text-align:right">
+        Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>
+        Fachberater: <b>${esc(c.fachberater || "—")}</b>
+      </div>
     </div>
+
+    <div style="font-size: 0.8em; margin-bottom: 1mm; font-weight: bold;">Tourenplan (Liefertage):</div>
+    <div class="tour-bar">${tourHtml}</div>
+
     <table>
       <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Schluss</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    
+    <div style="margin-top:auto; font-size: 0.7em; color: #999; text-align: center;">
+      Stand: ${new Date().toLocaleDateString('de-DE')}
+    </div>
   </div>`;
 }
 
 function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
     let fs = 10.5; p.style.setProperty("--fs", fs + "pt");
-    while(p.scrollHeight > p.clientHeight && fs > 7){ fs -= 0.1; p.style.setProperty("--fs", fs + "pt"); }
+    let safety = 0;
+    while(p.scrollHeight > p.clientHeight && fs > 7 && safety < 50){ 
+      fs -= 0.1; p.style.setProperty("--fs", fs + "pt"); 
+      safety++;
+    }
   });
 }
 
@@ -196,7 +224,7 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 
 # --- STREAMLIT LOGIK ---
 st.set_page_config(page_title="Sendeplan", layout="wide")
-st.title("Excel → Sendeplan (Inkl. B-Spalten & Deutsche See)")
+st.title("Excel → Sendeplan (Vollständig)")
 
 up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
 if up:
@@ -211,13 +239,13 @@ if up:
         if not knr: continue
         
         bestell = []
-        # 1. Tripel (Standard)
+        # 1. Tripel (Standard Fleischwerk)
         for d_de, groups in trip.items():
             for g, cols in groups.items():
                 s, t, z = norm(r.get(cols["Sort"])), norm(r.get(cols["Tag"])), normalize_time(r.get(cols["Zeit"]))
                 if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "is_ds": False})
         
-        # 2. B-Spalten (Bestellschluss-Logik)
+        # 2. B-Spalten (Spezial-Bestellschlüsse)
         for (lday, group, btag), cols in bmap.items():
             s = norm(r.get(cols.get("sort", "")))
             z = normalize_time(r.get(cols.get("zeit", "")))
@@ -231,12 +259,17 @@ if up:
         bestell.sort(key=lambda x: (DAYS_DE.index(x["liefertag"]), x["is_ds"]))
 
         data[knr] = {
-            "plan_typ": PLAN_TYP, "bereich": BEREICH, "kunden_nr": knr,
-            "name": norm(r.get("Name", "")), "strasse": norm(r.get("Strasse", "")),
-            "plz": norm(r.get("Plz", "")), "ort": norm(r.get("Ort", "")),
-            "tours": {d: norm(r.get(c, "")) for d, c in TOUR_COLS.items() if c in df.columns},
+            "plan_typ": PLAN_TYP, 
+            "bereich": BEREICH, 
+            "kunden_nr": knr,
+            "name": norm(r.get("Name", "")), 
+            "strasse": norm(r.get("Strasse", "")),
+            "plz": norm(r.get("Plz", "")), 
+            "ort": norm(r.get("Ort", "")),
+            "fachberater": norm(r.get("Fachberater", "")), # Fachberater aus Excel
+            "tours": {d: norm(r.get(col, "")) for d, col in TOUR_COLS.items() if col in df.columns}, # Touren pro Wochentag
             "bestell": bestell
         }
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("HTML-Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
+    st.download_button("HTML-Sendeplan herunterladen", data=html, file_name="sendeplan_final.html", mime="text/html")
