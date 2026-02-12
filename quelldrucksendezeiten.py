@@ -1,4 +1,4 @@
-```python
+
 # quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
 # VERSION: ABSOLUTE PRÄZISION - 100% ÜBEREINSTIMMUNG & A4 OPTIMIERT
