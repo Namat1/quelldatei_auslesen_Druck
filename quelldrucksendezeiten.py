@@ -159,7 +159,12 @@ def detect_bspalten(columns: List[str]):
     mapping = {}
     
     # ERSTE PHASE: Verarbeite Spalten OHNE "B" (diese haben Priorität für Z/L!)
+    # WICHTIG: Überspringe Spalten die "B " oder "B_" vor dem letzten Tag haben!
     for c in columns:
+        # Überspringe Spalten mit "B " oder "B_" - die werden in Phase 2 verarbeitet
+        if re.search(r'\sB[_ ]\s*', c, re.IGNORECASE):
+            continue
+            
         m = rx_no_b.match(c.strip())
         if m:
             day_de = DAY_SHORT_TO_DE.get(m.group(1))
