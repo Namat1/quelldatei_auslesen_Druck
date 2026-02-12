@@ -1,15 +1,3 @@
-```python
-# quelldrucksendezeiten.py
-# -----------------------------------------------------------------------------
-# VERSION: A4/PDF DRUCK-FIT + ROBUSTES AUSLESEN (CANONICAL SORTIMENT-IDs)
-# -----------------------------------------------------------------------------
-# Enthält:
-# - Canonical-ID Mapping (Fleisch/Wurst=21, Wiesenhof=1011, Bio=41, Frischfleisch=65, Avo=0, Werbe=91, Pfeiffer=22)
-# - Robustere Spaltenerkennung (Zeitende/Bestellzeitende/Bestelltag/Sortiment etc.)
-# - Safety-Net gegen "Montag Montag" in Zeitspalte
-# - A4-Layout (CSS) + AutoFit (JS) damit es beim Drucken zuverlässig auf 1x A4 passt
-# -----------------------------------------------------------------------------
-
 import json
 import re
 import datetime
@@ -476,5 +464,5 @@ if up:
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False, separators=(',', ':')))
     st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan.html", mime="text/html")
-```
+
 
