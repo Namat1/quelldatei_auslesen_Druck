@@ -1,3 +1,13 @@
+# quelldrucksendezeiten_fixed.py
+# -----------------------------------------------------------------------------
+# VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
+# -----------------------------------------------------------------------------
+# Änderungen:
+# - Sortimente werden nach ihrem TATSÄCHLICHEN Namen klassifiziert, nicht nach Spaltennummer
+# - Bestelltag wird aus L-Spalte gelesen (falls vorhanden), nicht aus Spaltennamen
+# - Robustere Handhabung von fehlplatzierten Sortimenten
+# -----------------------------------------------------------------------------
+
 import json
 import re
 import datetime
@@ -19,7 +29,15 @@ DAY_SHORT_TO_DE = {
 }
 
 # Reihenfolge der Sortimente innerhalb eines Tages (Prio)
-SORT_PRIO = {"21": 0, "1011": 1, "41": 2, "65": 3, "0": 4, "91": 5, "22": 6}
+# Basierend auf dem richtigen PDF:
+# 1. Bio-Geflügel (41)
+# 2. Geflügel Wiesenhof (1011)
+# 3. Frischfleisch Veredlung (65)
+# 4. Avo-Gewürze (0)
+# 5. Fleisch- & Wurst (21)
+# 6. Werbemittel (91)
+# 7. Pfeiffer etc. (22)
+SORT_PRIO = {"41": 0, "1011": 1, "65": 2, "0": 3, "21": 4, "91": 5, "22": 6}
 
 TOUR_COLS = {
     "Montag": "Mo",
@@ -69,6 +87,7 @@ def safe_time(val) -> str:
 def canon_group_id(label: str) -> str:
     """
     Mapped Sortimentsbezeichnungen robust auf interne IDs.
+    WICHTIG: Spezifischere Regeln MÜSSEN vor allgemeineren kommen!
     """
     s = norm(label).lower()
 
@@ -77,19 +96,36 @@ def canon_group_id(label: str) -> str:
     if m:
         return m.group(1)
 
-    # heuristische Treffer (Text)
-    if "fleisch" in s or "wurst" in s or "heidemark" in s:
-        return "21"
-    if "wiesenhof" in s or "geflügel" in s:
-        return "1011"
-    if "bio" in s:
+    # heuristische Treffer (Text) - REIHENFOLGE IST KRITISCH!
+    # Spezifische Begriffe ZUERST prüfen:
+    
+    # Bio-Geflügel (41) - sehr spezifisch
+    if "bio" in s and "geflügel" in s:
         return "41"
+    
+    # Wiesenhof/Geflügel (1011) - vor allgemeinem "fleisch"
+    if "wiesenhof" in s:
+        return "1011"
+    if "geflügel" in s:  # nur wenn nicht schon als Bio-Geflügel erkannt
+        return "1011"
+    
+    # Frischfleisch (65) - MUSS vor allgemeinem "fleisch" kommen!
     if "frischfleisch" in s or "veredlung" in s or "schwein" in s or "pök" in s:
         return "65"
+    
+    # Fleisch/Wurst (21) - allgemeiner Begriff, kommt NACH Frischfleisch
+    if "fleisch" in s or "wurst" in s or "heidemark" in s:
+        return "21"
+    
+    # Avo-Gewürze (0)
     if "avo" in s or "gewürz" in s:
         return "0"
+    
+    # Werbemittel (91)
     if "werbe" in s or "werbemittel" in s:
         return "91"
+    
+    # Pfeiffer etc. (22)
     if "pfeiffer" in s or "gmyrek" in s or "siebert" in s or "bard" in s or "mago" in s:
         return "22"
 
@@ -100,6 +136,9 @@ def detect_bspalten(columns: List[str]):
     """
     Erkennung für Spalten wie:
     "Mo Z Wiesenhof B_Di" / "Mo L Bio B_Mi" / "Mo Wiesenhof B_Di" etc.
+    
+    WICHTIG: Wir extrahieren die Gruppe aus dem Spaltennamen, aber klassifizieren
+    später das Sortiment anhand seines tatsächlichen Namens neu!
     """
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
@@ -114,11 +153,12 @@ def detect_bspalten(columns: List[str]):
 
         day_de = DAY_SHORT_TO_DE.get(m.group(1))
         zl = (m.group(2) or "").upper()
-        group_id = canon_group_id(m.group(3).strip())
-        bestell_de = DAY_SHORT_TO_DE.get(m.group(4))
+        group_text = m.group(3).strip()
+        bestell_de_from_name = DAY_SHORT_TO_DE.get(m.group(4))
 
-        if day_de and bestell_de:
-            key = (day_de, group_id, bestell_de)
+        if day_de and bestell_de_from_name:
+            # Verwende group_text als Key (nicht die ID), damit wir später den Bestelltag aus L-Spalte holen können
+            key = (day_de, group_text, bestell_de_from_name)
             mapping.setdefault(key, {})
             if zl == "Z":
                 mapping[key]["zeit"] = c
@@ -126,6 +166,7 @@ def detect_bspalten(columns: List[str]):
                 mapping[key]["l"] = c
             else:
                 mapping[key]["sort"] = c
+                mapping[key]["group_text"] = group_text
     return mapping
 
 
@@ -135,7 +176,6 @@ def detect_triplets(columns: List[str]):
     "<Tag> <Gruppe> Zeit|Zeitende|Bestellzeitende|Uhrzeit"
     "<Tag> <Gruppe> Sort|Sortiment"
     "<Tag> <Gruppe> Tag|Bestelltag"
-    -> canonical group IDs
     """
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+"
@@ -153,7 +193,8 @@ def detect_triplets(columns: List[str]):
             continue
 
         raw_group = m.group(2).strip()
-        gid = canon_group_id(raw_group)
+        # Speichere sowohl den rohen Text als auch die ID
+        group_text = raw_group
 
         end_key = m.group(3).lower()
         if end_key in ("sort", "sortiment"):
@@ -163,7 +204,7 @@ def detect_triplets(columns: List[str]):
         else:
             key = "Zeit"
 
-        found.setdefault(day_de, {}).setdefault(gid, {})[key] = c
+        found.setdefault(day_de, {}).setdefault(group_text, {})[key] = c
 
     return found
 
@@ -396,38 +437,47 @@ if up:
         for d_de in DAYS_DE:
             day_items = []
 
-            # 1) Triplets
+            # 1) Triplets - WICHTIG: Klassifiziere nach tatsächlichem Sortiment-Namen!
             if d_de in trip:
-                for gid, f in trip[d_de].items():
+                for group_text, f in trip[d_de].items():
                     s = norm(r.get(f.get("Sort")))
                     t = safe_time(r.get(f.get("Zeit")))
                     tag = norm(r.get(f.get("Tag")))
 
                     if s or t or tag:
+                        # Klassifiziere das Sortiment nach seinem NAMEN, nicht nach Spaltennummer!
+                        actual_gid = canon_group_id(s)
+                        
                         day_items.append({
                             "liefertag": d_de,
                             "sortiment": s,
                             "bestelltag": tag,
                             "bestellschluss": t,
-                            "prio": SORT_PRIO.get(gid, 50)
+                            "prio": SORT_PRIO.get(actual_gid, 50)
                         })
 
-            # 2) B-Spalten
+            # 2) B-Spalten - WICHTIG: Verwende Bestelltag AUS SPALTENNAMEN (nicht L-Spalte!)
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in keys:
                 f = bmap[k]
-                group_id = str(k[1])
-
+                
                 s = norm(r.get(f.get("sort", "")))
                 z = safe_time(r.get(f.get("zeit", "")))
+                
+                # Verwende Bestelltag AUS SPALTENNAMEN (k[2])
+                # Die L-Spalten sind in der Excel oft fehlerhaft!
+                tag = k[2]  # bestell_de_from_name aus Spaltennamen
 
                 if s or z:
+                    # Klassifiziere das Sortiment nach seinem NAMEN!
+                    actual_gid = canon_group_id(s)
+                    
                     day_items.append({
                         "liefertag": d_de,
                         "sortiment": s,
-                        "bestelltag": k[2],
+                        "bestelltag": tag,
                         "bestellschluss": z,
-                        "prio": SORT_PRIO.get(group_id, 50)
+                        "prio": SORT_PRIO.get(actual_gid, 50)
                     })
 
             # 3) Deutsche See
@@ -464,5 +514,3 @@ if up:
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False, separators=(',', ':')))
     st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan.html", mime="text/html")
-
-
