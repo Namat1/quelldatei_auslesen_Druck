@@ -4,6 +4,7 @@
 
 import json
 import re
+from typing import Dict  # <-- FIX
 import pandas as pd
 import streamlit as st
 
@@ -41,7 +42,6 @@ def norm(x) -> str:
         return ""
     s = str(x).strip()
     s = re.sub(r"\s+", " ", s)
-    # Excel 1030.0 -> 1030
     if re.fullmatch(r"\d+\.0", s):
         s = s[:-2]
     return s
@@ -50,7 +50,6 @@ def detect_triplets(columns):
     """
     erkennt alle Tripel:
       "<Tag> <Gruppe> Zeit"  / "<Tag> <Gruppe> Sort" / "<Tag> <Gruppe> Tag"
-    z.B.: "Mo 21 Zeit", "Mo 21 Sort", "Mo 21 Tag"
     """
     rx = re.compile(r"^(Mo|Die|Di|Mi|Do|Don|Mitt|Fr|Sa|Sam)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
@@ -70,7 +69,6 @@ def detect_triplets(columns):
 
         found.setdefault(day_de, {}).setdefault(group, {})[field] = c
 
-    # keep only complete triplets
     clean = {}
     for day_de, groups in found.items():
         for g, fields in groups.items():
@@ -93,7 +91,6 @@ HTML_TEMPLATE = """<!doctype html>
 <style>
   body { margin:0; font-family: Arial, Helvetica, sans-serif; background:#f0f0f0; }
 
-  /* Eingabe-Leiste (nicht drucken) */
   .bar {
     position: sticky; top: 0; z-index: 20;
     background:#fff; border-bottom:1px solid #bbb;
@@ -108,7 +105,6 @@ HTML_TEMPLATE = """<!doctype html>
   .btn.primary { border-color:#1b66b3; color:#1b66b3; font-weight:700; }
   .muted{ color:#666; }
 
-  /* A4 Seite */
   .page{
     width: 210mm;
     min-height: 297mm;
@@ -119,24 +115,20 @@ HTML_TEMPLATE = """<!doctype html>
     border:1px solid #bbb;
   }
 
-  /* Kopf wie Vorlage */
   .h1{ text-align:center; font-size:20pt; font-weight:800; margin:0; }
   .std{ text-align:center; font-size:18pt; font-weight:900; color:#c00; margin:2mm 0 2mm 0; }
   .sub{ text-align:center; font-size:11pt; margin:0 0 6mm 0; color:#111; }
 
-  /* Kopfblock (Adresse links, Meta rechts) */
   .head{
     display:flex; justify-content:space-between; gap:12mm;
     margin-bottom: 5mm;
   }
   .addr{ font-size:11pt; line-height:1.25; }
-  .addr .name{ font-weight:800; }
   .meta{ font-size:11pt; line-height:1.35; min-width:70mm; }
 
   .lines{ margin: 4mm 0 5mm 0; font-size:11pt; line-height:1.35; }
   .lines b{ font-weight:800; }
 
-  /* Tabelle wie in deiner Text-Vorlage */
   table{
     width:100%;
     border-collapse:collapse;
@@ -194,7 +186,6 @@ function esc(s){
 }
 
 function buildHeader(c){
-  // Liefertage/Touren in einer Zeile, nur aktive (wo Tour vorhanden)
   const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
   const active = days.filter(d => (c.tours && String(c.tours[d]||"").trim() !== ""));
   const dayLine = active.length ? active.join(" ") : "-";
@@ -213,7 +204,6 @@ function buildTableRows(c){
   let rows = "";
   for(const d of days){
     const arr = byDay[d] || [];
-    // exakt wie in deiner Vorlage: Zellen enthalten mehrzeilige Listen
     const sortLines = arr.map(x => esc(x.sortiment)).join("<br>");
     const tagLines  = arr.map(x => esc(x.bestelltag)).join("<br>");
     const zeitLines = arr.map(x => esc(x.bestellschluss)).join("<br>");
@@ -328,11 +318,9 @@ triplets = detect_triplets(df.columns.tolist())
 if not triplets:
     st.warning("Keine Spalten nach Muster '<Tag> <Gruppe> Zeit/Sort/Tag' erkannt. Prüfe Header.")
 else:
-    # nur Info
     days_found = [d for d in DAYS_DE if d in triplets]
     st.success(f"Zeit/Sort/Tag-Tripel erkannt für: {', '.join(days_found)}")
 
-# Daten aufbauen: pro Kunde alle Tripel-Gruppen (nicht nur 21)
 data: Dict[str, dict] = {}
 
 for _, r in df.iterrows():
@@ -340,17 +328,10 @@ for _, r in df.iterrows():
     if not knr:
         continue
 
-    name = norm(r.get("Name", ""))
-    strasse = norm(r.get("Strasse", ""))
-    plz = norm(r.get("Plz", ""))
-    ort = norm(r.get("Ort", ""))
-    sap = norm(r.get("SAP-Nr.", ""))
-
     tours = {}
     for day_de, col in TOUR_COLS.items():
         tours[day_de] = norm(r.get(col, "")) if col in df.columns else ""
 
-    # Bestellzeilen sammeln:
     bestell = []
     for day_de in DAYS_DE:
         groups = sorted(triplets.get(day_de, {}).keys(), key=group_sort_key)
@@ -372,11 +353,11 @@ for _, r in df.iterrows():
         "plan_typ": PLAN_TYP,
         "bereich": BEREICH,
         "kunden_nr": knr,
-        "sap_nr": sap,
-        "name": name,
-        "strasse": strasse,
-        "plz": plz,
-        "ort": ort,
+        "sap_nr": norm(r.get("SAP-Nr.", "")),
+        "name": norm(r.get("Name", "")),
+        "strasse": norm(r.get("Strasse", "")),
+        "plz": norm(r.get("Plz", "")),
+        "ort": norm(r.get("Ort", "")),
         "fax": norm(r.get("Fax", "")) if "Fax" in df.columns else "",
         "fachberater": norm(r.get("Fachberater", "")) if "Fachberater" in df.columns else "",
         "tours": tours,
