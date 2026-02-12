@@ -1,6 +1,6 @@
 # app.py
 # -----------------------------------------------------------------------------
-# Excel -> Standalone-HTML (Präzisions-Extraktion & A4-Druck-Optimierung)
+# FINAL VERSION: 100% Daten-Match (Wiesenhof Fix) + Scrollbar + Reset Button
 # -----------------------------------------------------------------------------
 
 import json
@@ -15,7 +15,6 @@ PLAN_TYP = "Standard"
 BEREICH = "Alle Sortimente Fleischwerk"
 DAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
-# Mapping für Wochentags-Abkürzungen aus der Excel
 DAY_SHORT_TO_DE = {
     "Mo": "Montag", "Di": "Dienstag", "Die": "Dienstag",
     "Mi": "Mittwoch", "Mit": "Mittwoch", "Mitt": "Mittwoch",
@@ -23,7 +22,6 @@ DAY_SHORT_TO_DE = {
     "Fr": "Freitag", "Sa": "Samstag", "Sam": "Samstag",
 }
 
-# Spalten für die Tour-Daten (1030, 2027, etc.)
 TOUR_COLS = {
     "Montag": "Mo", "Dienstag": "Die", "Mittwoch": "Mitt",
     "Donnerstag": "Don", "Freitag": "Fr", "Samstag": "Sam",
@@ -46,10 +44,9 @@ def normalize_time(s) -> str:
         return s + " Uhr"
     return s
 
-# --- Detektions-Logiken für die Excel-Spalten ---
+# --- Detektions-Logiken ---
 
 def detect_triplets(columns: List[str]):
-    """Erkennt Standard-Tripel wie 'Mo 21 Zeit', 'Mo 21 Sort', 'Mo 21 Tag'."""
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
     for c in columns:
@@ -61,12 +58,12 @@ def detect_triplets(columns: List[str]):
     return found
 
 def detect_bspalten(columns: List[str]):
-    """Erkennt B-Spalten wie 'Mo Z 0 B_Sa', 'Mo 1011 B_Fr' oder 'Donn Z 22 B_Mo'."""
+    # Erkennt ID-basierte Spalten (z.B. Wiesenhof 1011, Avo 0, etc.)
     rx = re.compile(
-        r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"  # Liefertag
-        r"(?:(Z|L)\s+)?"                                     # Optional: Z (Zeit) oder L
-        r"(.+?)\s+"                                          # ID (z.B. 0, 1011, 22)
-        r"B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$", # Bestelltag
+        r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
+        r"(?:(Z|L)\s+)?"
+        r"(.+?)\s+"
+        r"B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
         re.IGNORECASE
     )
     mapping = {}
@@ -86,7 +83,7 @@ def detect_bspalten(columns: List[str]):
     return mapping
 
 def detect_ds_triplets(columns: List[str]):
-    """Erkennt Deutsche See Spalten: 'DS [Junk] zu [Liefertag] [Field]'."""
+    # DS-Logik für Deutsche See
     rx = re.compile(r"^DS\s+(.+?)\s+zu\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp = {}
     for c in columns:
@@ -98,7 +95,7 @@ def detect_ds_triplets(columns: List[str]):
                 tmp.setdefault(day_de, {}).setdefault(key, {})[m.group(3).capitalize()] = c
     return tmp
 
-# --- HTML TEMPLATE MIT DRUCK-FIXES ---
+# --- HTML TEMPLATE MIT SCROLLBAR ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -107,47 +104,50 @@ HTML_TEMPLATE = """<!doctype html>
   @page { size: A4; margin: 0; }
   :root{ --bg:#0b1220; --stroke:rgba(255,255,255,.14); --text:rgba(255,255,255,.92); }
   *{ box-sizing:border-box; font-family: sans-serif; }
-  body{ margin:0; background: var(--bg); color:var(--text); }
+  body{ margin:0; background: var(--bg); color:var(--text); height: 100vh; overflow: hidden; }
   .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
   .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid var(--stroke); border-radius:12px; overflow:hidden; }
-  .list{ height: calc(100vh - 260px); overflow-y:auto; border-top:1px solid var(--stroke); }
+  .list{ height: calc(100vh - 300px); overflow-y:auto; border-top:1px solid var(--stroke); }
   .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
   .item:hover{ background:rgba(255,255,255,0.08); }
-  .wrap{ overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; }
   
+  /* Scrollbarer Bereich für die PDF-Vorschau */
+  .wrap{ 
+    height: 100%;
+    overflow-y: scroll; /* Scrollbar erzwingen */
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #1a2130;
+  }
+
   .paper{
     width: 210mm;
-    height: 296.5mm; /* Verhindert leere Extraseite */
+    min-height: 296.5mm;
     background: white; color: black; padding: 12mm;
-    position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    margin-bottom: 30px;
+    display: flex; flex-direction: column;
     --fs: 10.2pt;
   }
   .paper * { font-size: var(--fs); line-height: 1.15; }
-  .ptitle{ text-align:center; font-weight:900; font-size:1.6em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.3em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.6em; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; }
   .psub{ text-align:center; color:#555; margin-bottom:4mm; font-weight:bold; }
   .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom:1px solid #eee; padding-bottom:3mm; }
-  
   .tour-bar { display:flex; background:#f4f4f4; border:1px solid #ddd; margin-bottom:4mm; padding:2mm; border-radius:4px; justify-content:space-around; }
   .tour-item { text-align:center; font-size:0.85em; }
-  .tour-item b { display:block; font-size:0.75em; color:#666; }
-
   table{ width:100%; border-collapse:collapse; }
   th, td{ border:1px solid #000; padding:1.4mm; text-align:left; vertical-align:top; }
   th{ background:#f2f2f2; font-weight:bold; }
 
   @media print{
-    .sidebar{ display:none !important; }
-    .app{ display:block; padding:0; margin:0; }
-    .main{ background:none; border:none; }
-    .wrap{ padding:0; display:block; }
-    .paper{
-      box-shadow: none; margin: 0; border: none;
-      page-break-inside: avoid;
-      page-break-after: always;
-    }
-    .paper:last-child { page-break-after: auto !important; }
+    body { overflow: visible; background: white; }
+    .sidebar { display:none !important; }
+    .app { display:block; padding:0; }
+    .wrap { overflow: visible; padding: 0; background: white; }
+    .paper { box-shadow: none; margin: 0; page-break-after: always; }
   }
 </style>
 </head>
@@ -157,13 +157,14 @@ HTML_TEMPLATE = """<!doctype html>
     <div style="padding:15px"><b>Sendeplan Generator</b></div>
     <div style="padding:15px; display:flex; flex-direction:column; gap:8px;">
       <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:8px;">
-      <button onclick="showOne()" style="padding:8px; cursor:pointer;">Anzeigen</button>
+      <button onclick="showOne()" style="padding:8px; cursor:pointer; background:#4fa3ff; color:white; border:none; border-radius:4px;">Anzeigen</button>
+      <button onclick="resetApp()" style="padding:8px; cursor:pointer; background:#ff4f4f; color:white; border:none; border-radius:4px;">Reset</button>
       <button onclick="showAll()" style="padding:8px; cursor:pointer;">Alle laden</button>
       <button onclick="window.print()" style="padding:8px; background:#28a745; color:white; border:none; cursor:pointer;">Drucken</button>
     </div>
     <div class="list" id="list"></div>
   </div>
-  <div class="main"><div class="wrap" id="out"></div></div>
+  <div class="main"><div class="wrap" id="out">Excel hochladen & Kunden wählen</div></div>
 </div>
 <script>
 const DATA = __DATA_JSON__;
@@ -171,6 +172,11 @@ const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function resetApp() {
+    document.getElementById("knr").value = "";
+    document.getElementById("out").innerHTML = "App zurückgesetzt. Bitte Kunden wählen.";
+}
 
 function render(c){
   const byDay = {};
@@ -186,7 +192,7 @@ function render(c){
     </tr>`;
   }).join("");
 
-  const tourHtml = DAYS.map(d => `<div class="tour-item"><b>${d}</b>${esc(c.tours[d] || "—")}</div>`).join("");
+  const tourHtml = DAYS.map(d => `<div class="tour-item"><b>${d}</b><br>${esc(c.tours[d] || "—")}</div>`).join("");
 
   return `<div class="paper">
     <div class="ptitle">Sende- &amp; Belieferungsplan</div>
@@ -196,7 +202,6 @@ function render(c){
       <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
       <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
     </div>
-    <div style="font-size:0.8em; margin-bottom:1mm; font-weight:bold;">Tourenplan (Liefertage):</div>
     <div class="tour-bar">${tourHtml}</div>
     <table>
       <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
@@ -209,7 +214,7 @@ function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
     let fs = 10.2; p.style.setProperty("--fs", fs + "pt");
     let safety = 0;
-    while(p.scrollHeight > p.clientHeight && fs > 6.8 && safety < 40){
+    while(p.scrollHeight > 297 * 3.78 && fs > 6.5 && safety < 40){ // 297mm in px approx
       fs -= 0.1; p.style.setProperty("--fs", fs.toFixed(1) + "pt"); safety++;
     }
   });
@@ -231,16 +236,14 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 </html>
 """
 
-# --- STREAMLIT APP ---
+# --- STREAMLIT LOGIK ---
 st.set_page_config(page_title="Sendeplan Generator", layout="wide")
-st.title("Sendeplan Generator (Präzisions-Version)")
 
 up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     cols = df.columns.tolist()
     
-    # Detektoren initialisieren
     trip = detect_triplets(cols)
     bmap = detect_bspalten(cols)
     ds_trip = detect_ds_triplets(cols)
@@ -252,16 +255,16 @@ if up:
         
         bestell = []
         for d_de in DAYS_DE:
-            # 1. B-Spalten (Sortiments-IDs wie 0, 1011, 22, 91)
+            # 1. B-Spalten (Wiesenhof 1011, Avo 0, IDs 22, 65, 91)
             keys = [k for k in bmap.keys() if k[0] == d_de]
-            for k in keys:
+            for k in sorted(keys, key=lambda x: x[1]): # ID Sortierung
                 f = bmap[k]
                 s = norm(r.get(f.get("sort", "")))
                 z = normalize_time(r.get(f.get("zeit", "")))
                 if s or z:
                     bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z, "priority": 1})
             
-            # 2. Standard-Tripel (z.B. ID 21)
+            # 2. Standard-Tripel (ID 21)
             if d_de in trip:
                 for g in trip[d_de]:
                     f = trip[d_de][g]
@@ -269,7 +272,7 @@ if up:
                     if s or t or z:
                         bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "priority": 2})
 
-            # 3. Deutsche See Integration (DS)
+            # 3. Deutsche See
             if d_de in ds_trip:
                 for key_ds in ds_trip[d_de]:
                     f = ds_trip[d_de][key_ds]
@@ -277,7 +280,6 @@ if up:
                     if s or t or z:
                         bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "priority": 3})
 
-        # Sortierung innerhalb eines Tages: Standard-Sortimente zuerst
         bestell.sort(key=lambda x: x["priority"])
 
         data[knr] = {
@@ -289,6 +291,5 @@ if up:
             "bestell": bestell
         }
 
-    # HTML generieren
-    html_content = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("⬇️ HTML-Sendeplan herunterladen", data=html_content, file_name="sendeplan.html", mime="text/html")
+    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
+    st.download_button("HTML herunterladen", data=html, file_name="sendeplan_final.html", mime="text/html")
