@@ -258,7 +258,7 @@ def detect_ds_triplets(columns: List[str]):
     return tmp
 
 
-# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT) ---
+# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT - 4 BEREICHE) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -277,7 +277,7 @@ HTML_TEMPLATE = """<!doctype html>
   @media screen {
     .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
     .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
-    .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
+    .list{ height: calc(100vh - 380px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); margin-top:10px; }
     .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
     .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
@@ -409,6 +409,37 @@ HTML_TEMPLATE = """<!doctype html>
 
   .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
   
+  /* Bereichs-Buttons */
+  .area-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,.14);
+  }
+  
+  .area-btn {
+    padding: 12px;
+    border: 2px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.05);
+    color: #fff;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  
+  .area-btn:hover {
+    background: rgba(255,255,255,.12);
+    border-color: rgba(255,255,255,.4);
+  }
+  
+  .area-btn.active {
+    background: #4fa3ff;
+    border-color: #4fa3ff;
+  }
+  
   /* Verhindere Seitenumbrüche innerhalb von Tabellenzeilen */
   @media print {
     tr { page-break-inside: avoid; }
@@ -418,7 +449,16 @@ HTML_TEMPLATE = """<!doctype html>
 <body>
 <div class="app">
   <div class="sidebar">
-    <div style="padding:15px; font-weight:bold;">Sendeplan Generator</div>
+    <div style="padding:15px; font-weight:bold; font-size:16px;">Sendeplan Generator</div>
+    
+    <!-- BEREICHS-BUTTONS -->
+    <div class="area-buttons">
+      <div class="area-btn active" id="btn-direkt" onclick="switchArea('direkt')">Direkt</div>
+      <div class="area-btn" id="btn-mk" onclick="switchArea('mk')">MK</div>
+      <div class="area-btn" id="btn-nms" onclick="switchArea('nms')">HuPa NMS</div>
+      <div class="area-btn" id="btn-malchow" onclick="switchArea('malchow')">HuPa Malchow</div>
+    </div>
+    
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
       <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:10px; border-radius:5px;">
       <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; border-radius:5px;">Anzeigen</button>
@@ -429,13 +469,15 @@ HTML_TEMPLATE = """<!doctype html>
   </div>
 
   <div class="main">
-    <div class="wrap" id="out">Bitte Kunden wählen...</div>
+    <div class="wrap" id="out">Bitte Bereich und Kunden wählen...</div>
   </div>
 </div>
 
 <script>
-const DATA = __DATA_JSON__;
-const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
+const ALL_DATA = __DATA_JSON__;
+let currentArea = 'direkt';
+let DATA = ALL_DATA['direkt'] || {};
+let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
@@ -493,10 +535,45 @@ function showOne(){
   }
 }
 
+function switchArea(area){
+  currentArea = area;
+  DATA = ALL_DATA[area] || {};
+  ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
+  
+  // Update Button-Styles
+  document.querySelectorAll('.area-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`btn-${area}`).classList.add('active');
+  
+  // Update Liste
+  updateList();
+  
+  // Clear input und output
+  document.getElementById("knr").value = "";
+  document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
+}
+
+function getAreaName(area){
+  const names = {
+    'direkt': 'Direkt',
+    'mk': 'MK',
+    'nms': 'HuPa NMS',
+    'malchow': 'HuPa Malchow'
+  };
+  return names[area] || area;
+}
+
+function updateList(){
+  document.getElementById("list").innerHTML = ORDER.map(k => {
+    const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
+    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${esc(name)}</div>`;
+  }).join("");
+}
+
 function printAll(){
   // Bestätigungsdialog
   const count = ORDER.length;
-  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden drucken?`)) {
+  const areaName = getAreaName(currentArea);
+  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden aus "${areaName}" drucken?`)) {
     return;
   }
   
@@ -517,116 +594,144 @@ function printAll(){
   }, 500);
 }
 
-document.getElementById("list").innerHTML = ORDER.map(k => {
-  const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
-  return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${esc(name)}</div>`;
-}).join("");
+// Initialisiere Liste
+updateList();
 </script>
 </body>
 </html>
 """
 
 # --- STREAMLIT APP ---
-st.set_page_config(page_title="Sendeplan Fix", layout="wide")
+st.set_page_config(page_title="Sendeplan Generator - 4 Bereiche", layout="wide")
+
+st.title("Sendeplan Generator")
+st.write("Verarbeitet 4 Bereiche: Direkt, MK, HuPa NMS, HuPa Malchow")
 
 up = st.file_uploader("Excel Datei laden", type=["xlsx"])
 if up:
-    df = pd.read_excel(up)
-    cols = df.columns.tolist()
-
-    trip = detect_triplets(cols)
-    bmap = detect_bspalten(cols)
-    ds_trip = detect_ds_triplets(cols)
-
-    data = {}
-    for _, r in df.iterrows():
-        knr = norm(r.get("Nr", ""))
-        if not knr:
+    # Definiere die 4 Blätter und ihre internen Namen
+    SHEETS = {
+        'direkt': 'Direkt 1 - 99',
+        'mk': 'Hupa MK 882',
+        'nms': 'Hupa 2221-4444',
+        'malchow': 'Hupa 7773-7779'
+    }
+    
+    all_data = {}
+    
+    # Verarbeite jedes Blatt
+    for area_key, sheet_name in SHEETS.items():
+        st.write(f"Verarbeite: **{sheet_name}**...")
+        
+        try:
+            df = pd.read_excel(up, sheet_name=sheet_name)
+        except Exception as e:
+            st.error(f"Fehler beim Laden von '{sheet_name}': {e}")
             continue
+            
+        cols = df.columns.tolist()
 
-        bestell = []
-        for d_de in DAYS_DE:
-            day_items = []
+        trip = detect_triplets(cols)
+        bmap = detect_bspalten(cols)
+        ds_trip = detect_ds_triplets(cols)
 
-            # 1) Triplets - WICHTIG: Klassifiziere nach tatsächlichem Sortiment-Namen!
-            if d_de in trip:
-                for group_text, f in trip[d_de].items():
-                    s = norm(r.get(f.get("Sort")))
-                    t = safe_time(r.get(f.get("Zeit")))
-                    tag = norm(r.get(f.get("Tag")))
+        data = {}
+        for _, r in df.iterrows():
+            knr = norm(r.get("Nr", ""))
+            if not knr:
+                continue
 
-                    if s or t or tag:
-                        # Klassifiziere das Sortiment nach seinem NAMEN, nicht nach Spaltennummer!
+            bestell = []
+            for d_de in DAYS_DE:
+                day_items = []
+
+                # 1) Triplets - WICHTIG: Klassifiziere nach tatsächlichem Sortiment-Namen!
+                if d_de in trip:
+                    for group_text, f in trip[d_de].items():
+                        s = norm(r.get(f.get("Sort")))
+                        t = safe_time(r.get(f.get("Zeit")))
+                        tag = norm(r.get(f.get("Tag")))
+
+                        if s or t or tag:
+                            # Klassifiziere das Sortiment nach seinem NAMEN, nicht nach Spaltennummer!
+                            actual_gid = canon_group_id(s)
+                            
+                            day_items.append({
+                                "liefertag": d_de,
+                                "sortiment": s,
+                                "bestelltag": tag,
+                                "bestellschluss": t,
+                                "prio": SORT_PRIO.get(actual_gid, 50)
+                            })
+
+                # 2) B-Spalten - WICHTIG: Verwende L-Spalte für Bestelltag (wenn vorhanden)!
+                keys = [k for k in bmap.keys() if k[0] == d_de]
+                for k in keys:
+                    f = bmap[k]
+                    
+                    s = norm(r.get(f.get("sort", "")))
+                    z = safe_time(r.get(f.get("zeit", "")))
+                    
+                    # Verwende L-Spalte für Bestelltag (wenn vorhanden), sonst Spaltennamen
+                    l_col = f.get("l")
+                    if l_col:
+                        tag = norm(r.get(l_col, ""))
+                        if not tag:
+                            tag = k[2]  # Fallback auf Spaltennamen wenn L-Spalte leer
+                    else:
+                        tag = k[2]  # Kein L-Spalte -> verwende Spaltennamen
+
+                    if s or z:
+                        # Klassifiziere das Sortiment nach seinem NAMEN!
                         actual_gid = canon_group_id(s)
                         
                         day_items.append({
                             "liefertag": d_de,
                             "sortiment": s,
                             "bestelltag": tag,
-                            "bestellschluss": t,
+                            "bestellschluss": z,
                             "prio": SORT_PRIO.get(actual_gid, 50)
                         })
 
-            # 2) B-Spalten - WICHTIG: Verwende L-Spalte für Bestelltag (wenn vorhanden)!
-            keys = [k for k in bmap.keys() if k[0] == d_de]
-            for k in keys:
-                f = bmap[k]
-                
-                s = norm(r.get(f.get("sort", "")))
-                z = safe_time(r.get(f.get("zeit", "")))
-                
-                # Verwende L-Spalte für Bestelltag (wenn vorhanden), sonst Spaltennamen
-                l_col = f.get("l")
-                if l_col:
-                    tag = norm(r.get(l_col, ""))
-                    if not tag:
-                        tag = k[2]  # Fallback auf Spaltennamen wenn L-Spalte leer
-                else:
-                    tag = k[2]  # Kein L-Spalte -> verwende Spaltennamen
+                # 3) Deutsche See
+                if d_de in ds_trip:
+                    for key_ds in ds_trip[d_de]:
+                        f = ds_trip[d_de][key_ds]
+                        s = norm(r.get(f.get("Sort")))
+                        t = safe_time(r.get(f.get("Zeit")))
+                        tag = norm(r.get(f.get("Tag")))
+                        if s or t or tag:
+                            day_items.append({
+                                "liefertag": d_de,
+                                "sortiment": s,
+                                "bestelltag": tag,
+                                "bestellschluss": t,
+                                "prio": 4.5  # Zwischen Avo-Gewürze (4) und Werbemittel (5)
+                            })
 
-                if s or z:
-                    # Klassifiziere das Sortiment nach seinem NAMEN!
-                    actual_gid = canon_group_id(s)
-                    
-                    day_items.append({
-                        "liefertag": d_de,
-                        "sortiment": s,
-                        "bestelltag": tag,
-                        "bestellschluss": z,
-                        "prio": SORT_PRIO.get(actual_gid, 50)
-                    })
+                day_items.sort(key=lambda x: x["prio"])
+                bestell.extend(day_items)
 
-            # 3) Deutsche See
-            if d_de in ds_trip:
-                for key_ds in ds_trip[d_de]:
-                    f = ds_trip[d_de][key_ds]
-                    s = norm(r.get(f.get("Sort")))
-                    t = safe_time(r.get(f.get("Zeit")))
-                    tag = norm(r.get(f.get("Tag")))
-                    if s or t or tag:
-                        day_items.append({
-                            "liefertag": d_de,
-                            "sortiment": s,
-                            "bestelltag": tag,
-                            "bestellschluss": t,
-                            "prio": 4.5  # Zwischen Avo-Gewürze (4) und Werbemittel (5)
-                        })
-
-            day_items.sort(key=lambda x: x["prio"])
-            bestell.extend(day_items)
-
-        data[knr] = {
-            "plan_typ": PLAN_TYP,
-            "bereich": BEREICH,
-            "kunden_nr": knr,
-            "name": norm(r.get("Name", "")),
-            "strasse": norm(r.get("Strasse", "")),
-            "plz": norm(r.get("Plz", "")),
-            "ort": norm(r.get("Ort", "")),
-            "fachberater": norm(r.get("Fachberater", "")),
-            "tours": {d: norm(r.get(TOUR_COLS[d], "")) for d in DAYS_DE},
-            "bestell": bestell
-        }
-
-    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False, separators=(',', ':')))
-    st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan.html", mime="text/html")
+            data[knr] = {
+                "plan_typ": PLAN_TYP,
+                "bereich": BEREICH,
+                "kunden_nr": knr,
+                "name": norm(r.get("Name", "")),
+                "strasse": norm(r.get("Strasse", "")),
+                "plz": norm(r.get("Plz", "")),
+                "ort": norm(r.get("Ort", "")),
+                "fachberater": norm(r.get("Fachberater", "")),
+                "tours": {d: norm(r.get(TOUR_COLS[d], "")) for d in DAYS_DE},
+                "bestell": bestell
+            }
+        
+        # Speichere Daten für diesen Bereich
+        all_data[area_key] = data
+        st.success(f"✓ {sheet_name}: {len(data)} Kunden verarbeitet")
+    
+    # Generiere HTML mit allen 4 Bereichen
+    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(',', ':')))
+    
+    st.write("---")
+    st.write(f"**Gesamt:** {sum(len(all_data[k]) for k in all_data)} Kunden in {len(all_data)} Bereichen")
+    st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan_4_bereiche.html", mime="text/html")
