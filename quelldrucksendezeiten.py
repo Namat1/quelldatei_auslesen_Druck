@@ -1,6 +1,6 @@
 # quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
-# VERSION: ULTIMATIVE PRÄZISION - 100% ÜBEREINSTIMMUNG
+# VERSION: A4-MAX-SPACE & DATEN-CHECK
 # -----------------------------------------------------------------------------
 
 import json
@@ -86,43 +86,44 @@ def detect_ds_triplets(columns: List[str]):
                 tmp.setdefault(day_de, {}).setdefault(key, {})[m.group(3).capitalize()] = c
     return tmp
 
-# --- HTML TEMPLATE ---
+# --- HTML TEMPLATE FÜR EXTREMEN PLATZBEDARF ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <style>
   @page { size: A4; margin: 0; }
-  *{ box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
+  *{ box-sizing:border-box; font-family: Arial, sans-serif; }
   body{ margin:0; background: #0b1220; color: #fff; }
   .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
   .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
   .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
-  .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
+  .item{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
   .wrap{ height: 100%; overflow-y: scroll; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
   .paper{
-    width: 210mm; min-height: 296.5mm; background: white; color: black; padding: 12mm;
+    width: 210mm; height: 296.5mm; background: white; color: black; padding: 10mm;
     box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-    --fs: 12pt;
+    --fs: 11pt; 
   }
-  .paper * { font-size: var(--fs); line-height: 1.4; }
-  .ptitle{ text-align:center; font-weight:900; font-size:1.8em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.4em; }
-  .psub{ text-align:center; color:#444; margin-bottom:6mm; font-weight:bold; }
+  .paper * { font-size: var(--fs); line-height: 1.2; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.2em; }
+  .psub{ text-align:center; color:#444; margin-bottom:3mm; font-weight:bold; font-size:0.9em; }
   
-  .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom:2px solid #000; padding-bottom:3mm; }
+  .head-box { display:flex; justify-content:space-between; margin-bottom:3mm; border-bottom:1.5px solid #000; padding-bottom:2mm; }
+  .head-left { width: 60%; }
+  .head-right { width: 35%; text-align: right; }
 
-  .tour-info { margin-bottom: 5mm; }
-  .tour-table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
-  .tour-table th { background: #eee; font-size: 0.8em; padding: 2px; border: 1px solid #000; }
-  .tour-table td { border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; }
+  .tour-table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+  .tour-table th { background: #eee; font-size: 0.7em; padding: 1px; border: 1px solid #000; text-transform: uppercase; }
+  .tour-table td { border: 1px solid #000; padding: 3px; text-align: center; font-weight: bold; font-size: 0.9em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border: 2px solid #000; }
-  table.main-table th { border: 1px solid #000; padding: 8px; background:#f2f2f2; font-weight:bold; text-align:left; }
-  table.main-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border: 1.5px solid #000; }
+  table.main-table th { border: 1px solid #000; padding: 4px; background:#f2f2f2; font-weight:bold; text-align:left; font-size: 0.85em; }
+  table.main-table td { border: 1px solid #000; padding: 4px; vertical-align: top; font-size: 0.95em; }
 
-  .day-header { background-color: #e0e0e0 !important; font-weight: 900; border-top: 3px solid #000 !important; }
+  .day-header { background-color: #f0f0f0 !important; font-weight: bold; border-top: 2px solid #000 !important; }
 
   @media print{
     body { background: white; }
@@ -161,9 +162,9 @@ function render(c){
       items.forEach((it, idx) => {
         tableRows += `<tr class="${idx === 0 ? 'day-header' : ''}">
           <td style="width:18%">${idx === 0 ? d : ""}</td>
-          <td style="width:47%">${esc(it.sortiment)}</td>
-          <td style="width:17%">${esc(it.bestelltag)}</td>
-          <td style="width:18%">${esc(it.bestellschluss)}</td>
+          <td style="width:50%">${esc(it.sortiment)}</td>
+          <td style="width:16%">${esc(it.bestelltag)}</td>
+          <td style="width:16%">${esc(it.bestellschluss)}</td>
         </tr>`;
       });
     }
@@ -177,14 +178,12 @@ function render(c){
     <div class="pstd">${esc(c.plan_typ)}</div>
     <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
     <div class="head-box">
-      <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
-      <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
+      <div class="head-left"><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
+      <div class="head-right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
     </div>
-    <div class="tour-info">
-      <table class="tour-table"><thead><tr>${tourHead}</tr></thead><tbody><tr>${tourRow}</tr></tbody></table>
-    </div>
+    <table class="tour-table"><thead><tr>${tourHead}</tr></thead><tbody><tr>${tourRow}</tr></tbody></table>
     <table class="main-table">
-      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
+      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Schluss</th></tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
   </div>`;
@@ -192,8 +191,8 @@ function render(c){
 
 function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
-    let fs = 12; p.style.setProperty("--fs", fs + "pt");
-    while(p.scrollHeight > 1120 && fs > 8){ fs -= 0.5; p.style.setProperty("--fs", fs + "pt"); }
+    let fs = 11; p.style.setProperty("--fs", fs + "pt");
+    while(p.scrollHeight > 1115 && fs > 7.5){ fs -= 0.2; p.style.setProperty("--fs", fs + "pt"); }
   });
 }
 
@@ -209,9 +208,9 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 """
 
 # --- STREAMLIT APP ---
-st.set_page_config(page_title="Sendeplan Fix", layout="wide")
+st.set_page_config(page_title="Sendeplan A4 Fix", layout="wide")
 
-up = st.file_uploader("Excel Datei hochladen", type=["xlsx"])
+up = st.file_uploader("Excel Datei laden", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     cols = df.columns.tolist()
@@ -229,40 +228,22 @@ if up:
             # Fleisch/Wurst (ID 21)
             if d_de in trip and "21" in trip[d_de]:
                 f = trip[d_de]["21"]
-                bestell.append({
-                    "liefertag": d_de, 
-                    "sortiment": norm(r.get(f.get("Sort"))), 
-                    "bestelltag": norm(r.get(f.get("Tag"))), 
-                    "bestellschluss": normalize_time(r.get(f.get("Zeit"))), 
-                    "prio": 0
-                })
+                bestell.append({"liefertag": d_de, "sortiment": norm(r.get(f.get("Sort"))), "bestelltag": norm(r.get(f.get("Tag"))), "bestellschluss": normalize_time(r.get(f.get("Zeit"))), "prio": 0})
             
-            # B-Spalten (Wiesenhof etc.)
+            # B-Spalten (Wiesenhof, Bio, Frischfleisch, Avo, Werbe)
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in sorted(keys, key=lambda x: str(x[1])):
                 f = bmap[k]
                 s = norm(r.get(f.get("sort", "")))
                 z = normalize_time(r.get(f.get("zeit", "")))
                 if s or z:
-                    bestell.append({
-                        "liefertag": d_de, 
-                        "sortiment": s, 
-                        "bestelltag": k[2], 
-                        "bestellschluss": z, 
-                        "prio": 1
-                    })
+                    bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z, "prio": 1})
             
             # Deutsche See
             if d_de in ds_trip:
                 for key_ds in ds_trip[d_de]:
                     f = ds_trip[d_de][key_ds]
-                    bestell.append({
-                        "liefertag": d_de, 
-                        "sortiment": norm(r.get(f.get("Sort"))), 
-                        "bestelltag": norm(r.get(f.get("Tag"))), 
-                        "bestellschluss": normalize_time(r.get(f.get("Zeit"))), 
-                        "prio": 2
-                    })
+                    bestell.append({"liefertag": d_de, "sortiment": norm(r.get(f.get("Sort"))), "bestelltag": norm(r.get(f.get("Tag"))), "bestellschluss": normalize_time(r.get(f.get("Zeit"))), "prio": 2})
 
         data[knr] = {
             "plan_typ": PLAN_TYP, "bereich": BEREICH, "kunden_nr": knr,
@@ -274,4 +255,4 @@ if up:
         }
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
+    st.download_button("Download Sendeplan", data=html, file_name="sendeplan.html", mime="text/html")
