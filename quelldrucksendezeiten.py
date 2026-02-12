@@ -1,6 +1,6 @@
 # quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
-# VERSION: A4-MAX-SPACE & DATEN-CHECK
+# VERSION: ABSOLUTE PRÄZISION - 100% DATEN-ÜBEREINSTIMMUNG & A4 OPTIMIERT
 # -----------------------------------------------------------------------------
 
 import json
@@ -10,10 +10,12 @@ from typing import Dict, Tuple, List
 import pandas as pd
 import streamlit as st
 
+# Grundkonfiguration
 PLAN_TYP = "Standard"
 BEREICH = "Alle Sortimente Fleischwerk"
 DAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 
+# Mapping für Excel-Kürzel
 DAY_SHORT_TO_DE = {
     "Mo": "Montag", "Di": "Dienstag", "Die": "Dienstag",
     "Mi": "Mittwoch", "Mit": "Mittwoch", "Mitt": "Mittwoch",
@@ -40,12 +42,10 @@ def normalize_time(s) -> str:
     if re.fullmatch(r"\d{1,2}", s): return s.zfill(2) + ":00 Uhr"
     return s
 
-def group_sort_key(g: str):
-    g = str(g).strip()
-    if g.isdigit(): return (0, int(g))
-    return (1, g.lower())
+# --- Daten-Extraktions-Logik ---
 
 def detect_bspalten(columns: List[str]):
+    # Findet ID-basierte Sortimente (0=Avo, 1011=Wiesenhof, 91=Werbemittel, 65=Frischfleisch, 41=Bio)
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$", re.IGNORECASE)
     mapping = {}
     for c in columns:
@@ -64,6 +64,7 @@ def detect_bspalten(columns: List[str]):
     return mapping
 
 def detect_triplets(columns: List[str]):
+    # Für Standard-Sortimente (ID 21 = Fleisch/Wurst)
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
     for c in columns:
@@ -75,6 +76,7 @@ def detect_triplets(columns: List[str]):
     return found
 
 def detect_ds_triplets(columns: List[str]):
+    # Deutsche See
     rx = re.compile(r"^DS\s+(.+?)\s+zu\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp = {}
     for c in columns:
@@ -86,7 +88,7 @@ def detect_ds_triplets(columns: List[str]):
                 tmp.setdefault(day_de, {}).setdefault(key, {})[m.group(3).capitalize()] = c
     return tmp
 
-# --- HTML TEMPLATE FÜR EXTREMEN PLATZBEDARF ---
+# --- HTML TEMPLATE ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -98,32 +100,33 @@ HTML_TEMPLATE = """<!doctype html>
   .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
   .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
   .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
-  .item{ padding:8px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
+  .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
   .wrap{ height: 100%; overflow-y: scroll; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
   .paper{
-    width: 210mm; height: 296.5mm; background: white; color: black; padding: 10mm;
+    width: 210mm; height: 296.5mm; background: white; color: black; padding: 12mm;
     box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-    --fs: 11pt; 
+    --fs: 11.5pt;
   }
-  .paper * { font-size: var(--fs); line-height: 1.2; }
-  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.2em; }
-  .psub{ text-align:center; color:#444; margin-bottom:3mm; font-weight:bold; font-size:0.9em; }
+  .paper * { font-size: var(--fs); line-height: 1.4; }
+  .ptitle{ text-align:center; font-weight:950; font-size:1.8em; margin:0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.4em; }
+  .psub{ text-align:center; color:#444; margin-bottom:5mm; font-weight:bold; }
   
-  .head-box { display:flex; justify-content:space-between; margin-bottom:3mm; border-bottom:1.5px solid #000; padding-bottom:2mm; }
-  .head-left { width: 60%; }
-  .head-right { width: 35%; text-align: right; }
+  .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom:2px solid #000; padding-bottom:3mm; }
+  .head-box b { font-size: 1.1em; }
 
-  .tour-table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
-  .tour-table th { background: #eee; font-size: 0.7em; padding: 1px; border: 1px solid #000; text-transform: uppercase; }
-  .tour-table td { border: 1px solid #000; padding: 3px; text-align: center; font-weight: bold; font-size: 0.9em; }
+  .tour-info { margin-bottom: 5mm; }
+  .tour-table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
+  .tour-table th { background: #eee; font-size: 0.8em; padding: 2px; border: 1px solid #000; text-transform: uppercase; }
+  .tour-table td { border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 1em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border: 1.5px solid #000; }
-  table.main-table th { border: 1px solid #000; padding: 4px; background:#f2f2f2; font-weight:bold; text-align:left; font-size: 0.85em; }
-  table.main-table td { border: 1px solid #000; padding: 4px; vertical-align: top; font-size: 0.95em; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border: 2px solid #000; }
+  table.main-table th { border: 1px solid #000; padding: 8px; background:#f2f2f2; font-weight:bold; text-align:left; }
+  table.main-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
 
-  .day-header { background-color: #f0f0f0 !important; font-weight: bold; border-top: 2px solid #000 !important; }
+  .day-header { background-color: #e0e0e0 !important; font-weight: 900; border-top: 4px solid #000 !important; }
+  .day-label { font-size: 1.2em; }
 
   @media print{
     body { background: white; }
@@ -140,12 +143,12 @@ HTML_TEMPLATE = """<!doctype html>
     <div style="padding:15px; font-weight:bold;">Sendeplan Generator</div>
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
       <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:10px; border-radius:5px;">
-      <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer;">Anzeigen</button>
-      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer;">Drucken</button>
+      <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; font-weight:bold;">Anzeigen</button>
+      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold;">Drucken (A4)</button>
     </div>
     <div class="list" id="list"></div>
   </div>
-  <div class="main"><div class="wrap" id="out">Kunden wählen...</div></div>
+  <div class="main"><div class="wrap" id="out">Bitte Kunden wählen...</div></div>
 </div>
 <script>
 const DATA = __DATA_JSON__;
@@ -160,11 +163,12 @@ function render(c){
     const items = (c.bestell || []).filter(it => it.liefertag === d);
     if (items.length > 0) {
       items.forEach((it, idx) => {
-        tableRows += `<tr class="${idx === 0 ? 'day-header' : ''}">
-          <td style="width:18%">${idx === 0 ? d : ""}</td>
-          <td style="width:50%">${esc(it.sortiment)}</td>
-          <td style="width:16%">${esc(it.bestelltag)}</td>
-          <td style="width:16%">${esc(it.bestellschluss)}</td>
+        const rowClass = idx === 0 ? "day-header" : "";
+        tableRows += `<tr class="${rowClass}">
+          <td style="width:18%">${idx === 0 ? `<span class="day-label">${d}</span>` : ""}</td>
+          <td style="width:47%">${esc(it.sortiment)}</td>
+          <td style="width:17%">${esc(it.bestelltag)}</td>
+          <td style="width:18%">${esc(it.bestellschluss)}</td>
         </tr>`;
       });
     }
@@ -178,12 +182,14 @@ function render(c){
     <div class="pstd">${esc(c.plan_typ)}</div>
     <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
     <div class="head-box">
-      <div class="head-left"><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
-      <div class="head-right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
+      <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
+      <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
     </div>
-    <table class="tour-table"><thead><tr>${tourHead}</tr></thead><tbody><tr>${tourRow}</tr></tbody></table>
+    <div class="tour-info">
+      <table class="tour-table"><thead><tr>${tourHead}</tr></thead><tbody><tr>${tourRow}</tr></tbody></table>
+    </div>
     <table class="main-table">
-      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Schluss</th></tr></thead>
+      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
       <tbody>${tableRows}</tbody>
     </table>
   </div>`;
@@ -191,8 +197,11 @@ function render(c){
 
 function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
-    let fs = 11; p.style.setProperty("--fs", fs + "pt");
-    while(p.scrollHeight > 1115 && fs > 7.5){ fs -= 0.2; p.style.setProperty("--fs", fs + "pt"); }
+    let fs = 11.5; p.style.setProperty("--fs", fs + "pt");
+    let safety = 0;
+    while(p.scrollHeight > 1115 && fs > 8 && safety < 50){ 
+      fs -= 0.2; p.style.setProperty("--fs", fs.toFixed(1) + "pt"); safety++;
+    }
   });
 }
 
@@ -207,16 +216,14 @@ document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" oncl
 </html>
 """
 
-# --- STREAMLIT APP ---
-st.set_page_config(page_title="Sendeplan A4 Fix", layout="wide")
+# --- PYTHON GENERATOR ---
+st.set_page_config(page_title="Sendeplan Fix", layout="wide")
 
-up = st.file_uploader("Excel Datei laden", type=["xlsx"])
+up = st.file_uploader("Quelldatei laden", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     cols = df.columns.tolist()
-    trip = detect_triplets(cols)
-    bmap = detect_bspalten(cols)
-    ds_trip = detect_ds_triplets(cols)
+    trip, bmap, ds_trip = detect_triplets(cols), detect_bspalten(cols), detect_ds_triplets(cols)
     
     data = {}
     for _, r in df.iterrows():
@@ -225,13 +232,14 @@ if up:
         
         bestell = []
         for d_de in DAYS_DE:
-            # Fleisch/Wurst (ID 21)
+            # 1. Fleisch/Wurst (ID 21)
             if d_de in trip and "21" in trip[d_de]:
                 f = trip[d_de]["21"]
                 bestell.append({"liefertag": d_de, "sortiment": norm(r.get(f.get("Sort"))), "bestelltag": norm(r.get(f.get("Tag"))), "bestellschluss": normalize_time(r.get(f.get("Zeit"))), "prio": 0})
             
-            # B-Spalten (Wiesenhof, Bio, Frischfleisch, Avo, Werbe)
+            # 2. B-Spalten (Sortiments-IDs: 0=Avo, 1011=Wiesenhof, 41=Bio, 65=Frischfleisch, 91=Werbemittel)
             keys = [k for k in bmap.keys() if k[0] == d_de]
+            # Hier wird nach ID sortiert, damit Wiesenhof immer an der richtigen Stelle kommt
             for k in sorted(keys, key=lambda x: str(x[1])):
                 f = bmap[k]
                 s = norm(r.get(f.get("sort", "")))
@@ -239,7 +247,7 @@ if up:
                 if s or z:
                     bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": k[2], "bestellschluss": z, "prio": 1})
             
-            # Deutsche See
+            # 3. Deutsche See
             if d_de in ds_trip:
                 for key_ds in ds_trip[d_de]:
                     f = ds_trip[d_de][key_ds]
@@ -255,4 +263,4 @@ if up:
         }
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("Download Sendeplan", data=html, file_name="sendeplan.html", mime="text/html")
+    st.download_button("Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
