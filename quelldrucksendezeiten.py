@@ -1,4 +1,3 @@
-
 # quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
 # VERSION: ABSOLUTE PRÄZISION - 100% ÜBEREINSTIMMUNG & A4 OPTIMIERT
@@ -313,7 +312,7 @@ function showOne(){
   if(DATA[k]) { document.getElementById("out").innerHTML = render(DATA[k]); autoFit(); }
 }
 
-document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${DATA[k].name}</div>`).join("");
+document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" onclick="document.getElementById("knr").value='${k}';showOne()"><b>${k}</b> - ${DATA[k].name}</div>`).join("");
 </script>
 </body>
 </html>
@@ -411,4 +410,3 @@ if up:
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
     st.download_button("Download Sendeplan", data=html, file_name="sendeplan.html", mime="text/html")
-```
