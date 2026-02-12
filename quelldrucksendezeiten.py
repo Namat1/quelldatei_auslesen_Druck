@@ -1,11 +1,13 @@
+```python
 # quelldrucksendezeiten.py
 # -----------------------------------------------------------------------------
-# VERSION: ABSOLUTE PRÄZISION - 100% ÜBEREINSTIMMUNG & A4 OPTIMIERT
-# Fixes:
-# - Canonical-ID Mapping (Fleisch/Wurst -> 21, Wiesenhof -> 1011, Bio -> 41, Frischfleisch -> 65, Avo -> 0, Werbe -> 91, Pfeiffer -> 22)
-# - Robustere Triplet-Erkennung (Zeitende/Bestellzeitende/Bestelltag/Sortiment etc.)
-# - B-Spalten ebenfalls canonical (Prio korrekt)
-# - Safety-Net: verhindert "Montag Montag" in Zeitspalte
+# VERSION: A4/PDF DRUCK-FIT + ROBUSTES AUSLESEN (CANONICAL SORTIMENT-IDs)
+# -----------------------------------------------------------------------------
+# Enthält:
+# - Canonical-ID Mapping (Fleisch/Wurst=21, Wiesenhof=1011, Bio=41, Frischfleisch=65, Avo=0, Werbe=91, Pfeiffer=22)
+# - Robustere Spaltenerkennung (Zeitende/Bestellzeitende/Bestelltag/Sortiment etc.)
+# - Safety-Net gegen "Montag Montag" in Zeitspalte
+# - A4-Layout (CSS) + AutoFit (JS) damit es beim Drucken zuverlässig auf 1x A4 passt
 # -----------------------------------------------------------------------------
 
 import json
@@ -29,12 +31,15 @@ DAY_SHORT_TO_DE = {
 }
 
 # Reihenfolge der Sortimente innerhalb eines Tages (Prio)
-# 21: Fleisch/Wurst, 1011: Wiesenhof, 41: Bio, 65: Frischfleisch, 0: Avo, 91: Werbe, 22: Pfeiffer
 SORT_PRIO = {"21": 0, "1011": 1, "41": 2, "65": 3, "0": 4, "91": 5, "22": 6}
 
 TOUR_COLS = {
-    "Montag": "Mo", "Dienstag": "Die", "Mittwoch": "Mitt",
-    "Donnerstag": "Don", "Freitag": "Fr", "Samstag": "Sam"
+    "Montag": "Mo",
+    "Dienstag": "Die",
+    "Mittwoch": "Mitt",
+    "Donnerstag": "Don",
+    "Freitag": "Fr",
+    "Samstag": "Sam",
 }
 
 
@@ -75,8 +80,7 @@ def safe_time(val) -> str:
 
 def canon_group_id(label: str) -> str:
     """
-    Mapped die Sortimentsbezeichnung robust auf die internen IDs.
-    Damit wird "Fleisch- & Wurst ..." immer als 21 erkannt, auch wenn keine Zahl im Header steht.
+    Mapped Sortimentsbezeichnungen robust auf interne IDs.
     """
     s = norm(label).lower()
 
@@ -139,11 +143,11 @@ def detect_bspalten(columns: List[str]):
 
 def detect_triplets(columns: List[str]):
     """
-    Erkennung für Triplets pro Liefertag:
-    "<Tag> <Sortiment/Gruppe> Zeit|Zeitende|Bestellzeitende|Uhrzeit"
-    "<Tag> <Sortiment/Gruppe> Sort|Sortiment"
-    "<Tag> <Sortiment/Gruppe> Tag|Bestelltag"
-    -> mappen auf canonical group IDs
+    Robustere Triplet-Erkennung:
+    "<Tag> <Gruppe> Zeit|Zeitende|Bestellzeitende|Uhrzeit"
+    "<Tag> <Gruppe> Sort|Sortiment"
+    "<Tag> <Gruppe> Tag|Bestelltag"
+    -> canonical group IDs
     """
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+"
@@ -195,50 +199,80 @@ def detect_ds_triplets(columns: List[str]):
     return tmp
 
 
-# --- HTML TEMPLATE ---
+# --- HTML TEMPLATE (A4 FIT) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <style>
-  @page { size: A4; margin: 0; }
+  /* Druckseite */
+  @page { size: A4; margin: 8mm; }
+
   *{ box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
-  body{ margin:0; background: #0b1220; color: #fff; }
+  body{ margin:0; background:#0b1220; color:#fff; }
+
   .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
   .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
   .list{ height: calc(100vh - 280px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); }
   .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
-  .wrap{ height: 100%; overflow-y: scroll; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+  .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
+  /* Papier */
   .paper{
-    width: 210mm; min-height: 296.5mm; background: white; color: black; padding: 12mm;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-    --fs: 12pt;
+    width: 210mm;
+    height: 297mm;                 /* fix auf A4 */
+    background:#fff;
+    color:#000;
+    padding: 8mm;                  /* kompakter */
+    box-shadow: 0 0 20px rgba(0,0,0,.5);
+    display:flex;
+    flex-direction:column;
+
+    --fs: 10.5pt;                  /* kleiner */
+    --lh: 1.25;
   }
-  .paper * { font-size: var(--fs); line-height: 1.4; }
-  .ptitle{ text-align:center; font-weight:900; font-size:1.8em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; font-size:1.4em; }
-  .psub{ text-align:center; color:#444; margin-bottom:6mm; font-weight:bold; }
 
-  .head-box { display:flex; justify-content:space-between; margin-bottom:4mm; border-bottom:2px solid #000; padding-bottom:3mm; }
+  .paper *{ font-size: var(--fs); line-height: var(--lh); }
 
-  .tour-info { margin-bottom: 5mm; }
-  .tour-table { width: 100%; border-collapse: collapse; margin-top: 1mm; }
-  .tour-table th { background: #eee; font-size: 0.8em; padding: 2px; border: 1px solid #000; }
-  .tour-table td { border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; font-size: 1.1em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.55em; margin:0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:1mm 0; font-size:1.15em; }
+  .psub{ text-align:center; color:#333; margin: 0 0 4mm 0; font-weight:700; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border: 2px solid #000; }
-  table.main-table th { border: 1px solid #000; padding: 8px; background:#f2f2f2; font-weight:bold; text-align:left; }
-  table.main-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
+  .head-box{
+    display:flex;
+    justify-content:space-between;
+    gap:8mm;
+    margin-bottom:3mm;
+    border-bottom:1.5px solid #000;
+    padding-bottom:2mm;
+  }
 
-  .day-header { background-color: #e0e0e0 !important; font-weight: 900; border-top: 3px solid #000 !important; }
+  .tour-info { margin-bottom: 3mm; }
+
+  .tour-table { width:100%; border-collapse: collapse; margin-top: 1mm; table-layout: fixed; }
+  .tour-table th { background:#eee; font-size:0.85em; padding:2px 0; border:1px solid #000; }
+  .tour-table td { border:1px solid #000; padding:4px 0; text-align:center; font-weight:800; font-size:1.0em; }
+
+  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border:2px solid #000; }
+  table.main-table th { border:1px solid #000; padding:5px 6px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.9em; }
+  table.main-table td { border:1px solid #000; padding:5px 6px; vertical-align: top; word-wrap: break-word; overflow-wrap:anywhere; }
+
+  .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
 
   @media print{
-    body { background: white; }
-    .sidebar { display:none !important; }
-    .app { display:block; padding:0; }
-    .wrap { overflow: visible; padding: 0; }
-    .paper { box-shadow: none; margin: 0; page-break-after: always; }
+    body{ background:#fff !important; }
+    .sidebar{ display:none !important; }
+    .app{ display:block; padding:0; }
+    .wrap{ overflow: visible; padding: 0; }
+    .paper{
+      box-shadow:none;
+      margin:0;
+      width: auto;
+      height: auto;
+      page-break-after: always;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
   }
 </style>
 </head>
@@ -253,8 +287,12 @@ HTML_TEMPLATE = """<!doctype html>
     </div>
     <div class="list" id="list"></div>
   </div>
-  <div class="main"><div class="wrap" id="out">Bitte Kunden wählen...</div></div>
+
+  <div class="main">
+    <div class="wrap" id="out">Bitte Kunden wählen...</div>
+  </div>
 </div>
+
 <script>
 const DATA = __DATA_JSON__;
 const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
@@ -279,20 +317,26 @@ function render(c){
     }
   });
 
-  const tourRow = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
+  const tourRow  = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
   return `<div class="paper">
     <div class="ptitle">Sende- &amp; Belieferungsplan</div>
     <div class="pstd">${esc(c.plan_typ)}</div>
     <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
+
     <div class="head-box">
       <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
       <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
     </div>
+
     <div class="tour-info">
-      <table class="tour-table"><thead><tr>${tourHead}</tr></thead><tbody><tr>${tourRow}</tr></tbody></table>
+      <table class="tour-table">
+        <thead><tr>${tourHead}</tr></thead>
+        <tbody><tr>${tourRow}</tr></tbody>
+      </table>
     </div>
+
     <table class="main-table">
       <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
       <tbody>${tableRows}</tbody>
@@ -302,17 +346,41 @@ function render(c){
 
 function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
-    let fs = 12; p.style.setProperty("--fs", fs + "pt");
-    while(p.scrollHeight > 1120 && fs > 8){ fs -= 0.5; p.style.setProperty("--fs", fs + "pt"); }
+    let fs = 10.5;
+    let lh = 1.25;
+
+    p.style.setProperty("--fs", fs + "pt");
+    p.style.setProperty("--lh", lh);
+
+    // shrink font until it fits (guard prevents endless loop)
+    let guard = 120;
+    while (p.scrollHeight > p.clientHeight && fs > 8.5 && guard-- > 0) {
+      fs -= 0.25;
+      p.style.setProperty("--fs", fs + "pt");
+    }
+
+    // if still too tall, reduce line-height slightly
+    guard = 60;
+    while (p.scrollHeight > p.clientHeight && lh > 1.10 && guard-- > 0) {
+      lh -= 0.02;
+      p.style.setProperty("--lh", lh.toFixed(2));
+    }
   });
 }
 
 function showOne(){
   const k = document.getElementById("knr").value.trim();
-  if(DATA[k]) { document.getElementById("out").innerHTML = render(DATA[k]); autoFit(); }
+  if(DATA[k]) {
+    document.getElementById("out").innerHTML = render(DATA[k]);
+    // Timeout, damit Layout fertig gerendert ist bevor gemessen wird
+    setTimeout(autoFit, 0);
+  }
 }
 
-document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" onclick="document.getElementById("knr").value='${k}';showOne()"><b>${k}</b> - ${DATA[k].name}</div>`).join("");
+document.getElementById("list").innerHTML = ORDER.map(k => {
+  const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
+  return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${esc(name)}</div>`;
+}).join("");
 </script>
 </body>
 </html>
@@ -340,14 +408,13 @@ if up:
         for d_de in DAYS_DE:
             day_items = []
 
-            # 1) Triplets (inkl. Fleisch/Wurst etc. über canonical ID)
+            # 1) Triplets
             if d_de in trip:
                 for gid, f in trip[d_de].items():
                     s = norm(r.get(f.get("Sort")))
                     t = safe_time(r.get(f.get("Zeit")))
                     tag = norm(r.get(f.get("Tag")))
 
-                    # nur aufnehmen wenn irgendwas gefüllt ist
                     if s or t or tag:
                         day_items.append({
                             "liefertag": d_de,
@@ -357,7 +424,7 @@ if up:
                             "prio": SORT_PRIO.get(gid, 50)
                         })
 
-            # 2) B-Spalten (Wiesenhof, Bio, etc.) -> canonical group id für Prio
+            # 2) B-Spalten
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in keys:
                 f = bmap[k]
@@ -391,7 +458,6 @@ if up:
                             "prio": 80
                         })
 
-            # innerhalb eines Tages sortieren
             day_items.sort(key=lambda x: x["prio"])
             bestell.extend(day_items)
 
@@ -408,5 +474,7 @@ if up:
             "bestell": bestell
         }
 
-    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
-    st.download_button("Download Sendeplan", data=html, file_name="sendeplan.html", mime="text/html")
+    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False, separators=(',', ':')))
+    st.download_button("Download Sendeplan (A4)", data=html, file_name="sendeplan.html", mime="text/html")
+```
+
