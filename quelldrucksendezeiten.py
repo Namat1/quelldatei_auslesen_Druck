@@ -186,8 +186,9 @@ function esc(s) {{
 }}
 
 function renderCard(c) {{
-  // Tours
   const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+
+  // Tours
   let tourRows = "";
   for (const d of days) {{
     const t = (c.tours && c.tours[d]) ? String(c.tours[d]).trim() : "";
@@ -280,7 +281,7 @@ function loadCard() {{
   const c = DATA[knr];
   if (!c) {{
     out.innerHTML = `<div class="error">Kundennummer <b>${{esc(knr)}}</b> nicht gefunden.</div>`;
-    hint.textContent = `Vorhanden: ${Object.keys(DATA).length} Kunden`;
+    hint.textContent = `Vorhanden: ${{Object.keys(DATA).length}} Kunden`;
     return;
   }}
   out.innerHTML = renderCard(c);
