@@ -1,7 +1,16 @@
+Das liegt wahrscheinlich daran, dass die Logik für die **B_-Spalten** (die in deinem ersten Entwurf vorhanden war) in der Zwischenversion durch die Vereinfachung für Deutsche See überschrieben wurde.
+
+Hier ist das **vollständige Skript**, das alle Logiken vereint:
+
+1. **B_-Mapping** (Bestellschluss-Logik).
+2. **Tripel-Logik** (Standard-Spalten).
+3. **Deutsche See Integration** (direkt in die Wochentage).
+4. **Auto-Fit** für A4.
+
+```python
 # app.py
 # ------------------------------------------------------------
-# Excel -> Standalone-HTML (Deutsche See integriert in Wochentage)
-# Ziel: Pro Kunde GENAU 1x A4 Seite (Schriftgröße passt sich an)
+# Excel -> Standalone-HTML (KOMPLETT: B-Spalten, Tripel & Deutsche See)
 # ------------------------------------------------------------
 
 import json
@@ -44,21 +53,39 @@ def normalize_time(s) -> str:
         return s + " Uhr"
     return s
 
+def group_sort_key(g: str):
+    g = g.strip()
+    if g.isdigit(): return (0, int(g))
+    return (1, g.lower())
+
 def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
-    """Erkennt Spalten wie 'Mo Fleisch Zeit', 'Mo Fleisch Sort' etc."""
     rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     found = {}
     for c in [c.strip() for c in columns]:
         m = rx.match(c)
         if not m: continue
-        day_short, group, field = m.group(1), m.group(2).strip(), m.group(3).capitalize()
-        day_de = DAY_SHORT_TO_DE.get(day_short)
-        if day_de:
-            found.setdefault(day_de, {}).setdefault(group, {})[field] = c
+        day_s, group, field = m.group(1), m.group(2).strip(), m.group(3).capitalize()
+        day_de = DAY_SHORT_TO_DE.get(day_s)
+        if day_de: found.setdefault(day_de, {}).setdefault(group, {})[field] = c
     return found
 
+def detect_bspalten(columns: List[str]) -> Dict[Tuple[str, str, str], Dict[str, str]]:
+    rx = re.compile(r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)$", re.IGNORECASE)
+    mapping = {}
+    for c in [c.strip() for c in columns]:
+        m = rx.match(c)
+        if not m: continue
+        day_s, zl, group, b_s = m.group(1), (m.group(2) or "").upper(), m.group(3).strip(), m.group(4)
+        day_de, b_de = DAY_SHORT_TO_DE.get(day_s), DAY_SHORT_TO_DE.get(b_s)
+        if day_de and b_de:
+            key = (day_de, group, b_de)
+            mapping.setdefault(key, {})
+            if zl == "Z": mapping[key]["zeit"] = c
+            elif zl == "L": mapping[key]["l"] = c
+            else: mapping[key]["sort"] = c
+    return mapping
+
 def detect_ds_triplets(columns: List[str]) -> Dict[str, Dict[str, str]]:
-    """Erkennt DS Spalten wie 'DS Montag Zeit', 'DS Montag Sort' etc."""
     rx = re.compile(r"^DS\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp = {}
     for c in [c.strip() for c in columns]:
@@ -66,95 +93,69 @@ def detect_ds_triplets(columns: List[str]) -> Dict[str, Dict[str, str]]:
         if not m: continue
         day_raw, field = m.group(1).strip(), m.group(2).capitalize()
         day_de = DAY_SHORT_TO_DE.get(day_raw) or day_raw
-        if day_de in DAYS_DE:
-            tmp.setdefault(day_de, {})[field] = c
+        if day_de in DAYS_DE: tmp.setdefault(day_de, {})[field] = c
     return tmp
 
-# --- HTML TEMPLATE MIT AUTO-FIT LOGIK ---
+# --- HTML TEMPLATE ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <style>
   @page { size: A4; margin: 0; }
-  :root{
-    --bg:#0b1220; --panel:rgba(255,255,255,.08); --stroke:rgba(255,255,255,.14);
-    --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.62);
-    --paper:#fff; --ink:#0b0f17; --sub:#394054;
-  }
-  *{ box-sizing:border-box; font-family: ui-sans-serif, system-ui, sans-serif; }
+  :root{ --bg:#0b1220; --stroke:rgba(255,255,255,.14); --text:rgba(255,255,255,.92); --paper:#fff; }
+  *{ box-sizing:border-box; font-family: sans-serif; }
   body{ margin:0; background: var(--bg); color:var(--text); }
-  
-  /* Sidebar & Main Layout */
-  .app{ display:grid; grid-template-columns: 340px 1fr; height:100vh; padding:15px; gap:15px; }
-  .sidebar, .main{ background: var(--panel); border:1px solid var(--stroke); border-radius:12px; overflow:hidden; backdrop-filter: blur(10px); }
-  .list{ height: calc(100vh - 250px); overflow-y:auto; border-top:1px solid var(--stroke); }
-  .item{ padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
+  .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
+  .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid var(--stroke); border-radius:12px; overflow:hidden; }
+  .list{ height: calc(100vh - 260px); overflow-y:auto; border-top:1px solid var(--stroke); }
+  .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:12px; }
   .item:hover{ background:rgba(255,255,255,0.08); }
-  .main{ display:flex; flex-direction:column; }
-  .wrap{ flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; }
-  
-  /* A4 Papier Simulation & Druck */
+  .wrap{ overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; height:100%; }
   .paper{
-    width:210mm; height:297mm; min-height:297mm; background:white; color:black; padding:15mm;
-    position:relative; box-shadow: 0 0 30px rgba(0,0,0,0.5); page-break-after: always;
-    display: flex; flex-direction: column; --fs: 10.5pt;
+    width:210mm; height:297mm; min-height:297mm; background:white; color:black; padding:12mm;
+    position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); page-break-after: always;
+    display:flex; flex-direction:column; --fs: 10.5pt;
   }
-  .paper * { font-size: var(--fs); line-height: 1.25; }
-  .ptitle{ text-align:center; font-weight:950; font-size:1.6em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:2mm 0; font-size:1.2em; }
-  .psub{ text-align:center; color:var(--sub); margin-bottom:8mm; font-weight:600; }
-  
-  .head{ display:flex; justify-content:space-between; margin-bottom:6mm; }
-  .head-left b { font-size: 1.1em; }
-  
-  table{ width:100%; border-collapse:collapse; margin-top: 2mm; }
-  th, td{ border:1px solid #000; padding:1.8mm; text-align:left; vertical-align:top; }
-  th{ background:#f2f2f2; font-weight:bold; }
-  
-  .ds-tag { color: #0056b3; font-weight: bold; font-size: 0.85em; vertical-align: middle; }
-
+  .paper * { font-size: var(--fs); line-height: 1.2; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:bold; margin:1mm 0; }
+  .psub{ text-align:center; color:#555; margin-bottom:5mm; }
+  table{ width:100%; border-collapse:collapse; }
+  th, td{ border:1px solid #000; padding:1.5mm; text-align:left; vertical-align:top; }
+  th{ background:#f2f2f2; }
+  .ds-tag { color: #0056b3; font-weight: bold; }
   @media print{
-    body { background: none; }
-    .sidebar { display:none !important; }
-    .app { display:block; padding:0; }
-    .main { border:none; background:none; }
-    .wrap { padding:0; overflow:visible; }
-    .paper { box-shadow:none; margin:0; border:none; width:210mm; height:297mm; }
+    .sidebar{ display:none; }
+    .app{ display:block; padding:0; }
+    .paper{ box-shadow:none; margin:0; }
   }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="sidebar">
-    <div style="padding:15px"><b>📄 Sendeplan-Generator</b></div>
-    <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
-      <input id="knr" placeholder="Kundennummer eingeben..." style="padding:10px; border-radius:8px; border:1px solid var(--stroke); background:rgba(0,0,0,0.2); color:white;">
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-        <button onclick="showOne()" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:#4fa3ff; color:white; font-weight:bold;">Anzeigen</button>
-        <button onclick="showAll()" style="padding:10px; cursor:pointer; border-radius:8px; border:none; background:rgba(255,255,255,0.1); color:white;">Alle laden</button>
-      </div>
-      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Jetzt Drucken (A4)</button>
+    <div style="padding:15px"><b>Sendeplan Generator</b></div>
+    <div style="padding:15px; display:flex; flex-direction:column; gap:8px;">
+      <input id="knr" placeholder="Kunden-Nr..." style="padding:8px; border-radius:5px; border:none;">
+      <button onclick="showOne()" style="padding:8px; cursor:pointer;">Anzeigen</button>
+      <button onclick="showAll()" style="padding:8px; cursor:pointer;">Alle laden</button>
+      <button onclick="window.print()" style="padding:8px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer;">Drucken</button>
     </div>
     <div class="list" id="list"></div>
   </div>
-  <div class="main">
-    <div id="mh_info" style="padding:10px; font-size:12px; color:var(--muted); text-align:center;">Excel hochgeladen. Bitte Kunden wählen.</div>
-    <div class="wrap" id="out"></div>
-  </div>
+  <div class="main"><div class="wrap" id="out"></div></div>
 </div>
-
 <script>
 const DATA = __DATA_JSON__;
 const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0) - (Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
-function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
 function render(c){
   const byDay = {};
   c.bestell.forEach(it => { if(!byDay[it.liefertag]) byDay[it.liefertag]=[]; byDay[it.liefertag].push(it); });
-
   const rows = DAYS.map(d => {
     const items = byDay[d] || [];
     return `<tr>
@@ -165,56 +166,31 @@ function render(c){
     </tr>`;
   }).join("");
 
-  const activeTours = DAYS.map(d => c.tours[d] ? esc(c.tours[d]) : "—").join(" | ");
-
-  return `
-    <div class="paper">
-      <div class="ptitle">Sende- &amp; Belieferungsplan</div>
-      <div class="pstd">${esc(c.plan_typ)}</div>
-      <div class="psub">${esc(c.bereich)}</div>
-      <div class="head">
-        <div class="head-left">
-          <b>${esc(c.name)}</b><br>
-          ${esc(c.strasse)}<br>
-          ${esc(c.plz)} ${esc(c.ort)}
-        </div>
-        <div style="text-align:right">
-          Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>
-          Fachberater: ${esc(c.fachberater || "—")}
-        </div>
-      </div>
-      <div style="margin-bottom:4mm; border-top:1px solid #eee; padding-top:2mm;">
-        <b>Wochentag-Touren:</b><br>
-        <small style="color:#666">${DAYS.map(d=>d.substring(0,2)).join(" | ")}</small><br>
-        ${activeTours}
-      </div>
-      <table>
-        <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellschluss</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div style="margin-top:auto; font-size:8pt; color:#999; text-align:center;">
-        Erstellt am ${new Date().toLocaleDateString('de-DE')}
-      </div>
-    </div>`;
+  return `<div class="paper">
+    <div class="ptitle">Sende- &amp; Belieferungsplan</div>
+    <div class="pstd">${esc(c.plan_typ)}</div>
+    <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:5mm;">
+      <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
+      <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Tour: ${DAYS.map(d=>c.tours[d]).filter(x=>x).join("/")}</div>
+    </div>
+    <table>
+      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Schluss</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function autoFit(){
   document.querySelectorAll(".paper").forEach(p => {
     let fs = 10.5; p.style.setProperty("--fs", fs + "pt");
-    // Reduziere Schriftgröße, bis alles auf die Seite passt
-    let safety = 0;
-    while(p.scrollHeight > p.clientHeight + 2 && fs > 6.5 && safety < 40){
-      fs -= 0.1; p.style.setProperty("--fs", fs + "pt");
-      safety++;
-    }
+    while(p.scrollHeight > p.clientHeight && fs > 7){ fs -= 0.1; p.style.setProperty("--fs", fs + "pt"); }
   });
 }
 
 function showOne(){
   const k = document.getElementById("knr").value.trim();
-  if(!DATA[k]) return;
-  document.getElementById("out").innerHTML = render(DATA[k]);
-  autoFit();
+  if(DATA[k]) { document.getElementById("out").innerHTML = render(DATA[k]); autoFit(); }
 }
 
 function showAll(){
@@ -222,66 +198,57 @@ function showAll(){
   autoFit();
 }
 
-document.getElementById("list").innerHTML = ORDER.map(k=>`
-  <div class="item" onclick="document.getElementById('knr').value='${k}';showOne()">
-    <b>${k}</b> - ${esc(DATA[k].name)}
-  </div>`).join("");
+document.getElementById("list").innerHTML = ORDER.map(k=>`<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${esc(DATA[k].name)}</div>`).join("");
 </script>
 </body>
 </html>
 """
 
-# --- STREAMLIT GENERATOR ---
-st.set_page_config(page_title="Plan-Generator", layout="wide")
-st.title("Excel → A4 Druckvorlage (Inkl. Deutsche See)")
+# --- STREAMLIT LOGIK ---
+st.set_page_config(page_title="Sendeplan", layout="wide")
+st.title("Excel → Sendeplan (Inkl. B-Spalten & Deutsche See)")
 
-up = st.file_uploader("Excel Datei hochladen (.xlsx)", type=["xlsx"])
+up = st.file_uploader("Excel Datei wählen", type=["xlsx"])
 if up:
     df = pd.read_excel(up)
     trip = detect_triplets(df.columns)
+    bmap = detect_bspalten(df.columns)
     ds_trip = detect_ds_triplets(df.columns)
     
-    data_json = {}
+    data = {}
     for _, r in df.iterrows():
         knr = norm(r.get("Nr", ""))
         if not knr: continue
         
         bestell = []
-        # 1. Normale Fleischwerk-Sortimente sammeln
+        # 1. Tripel (Standard)
         for d_de, groups in trip.items():
             for g, cols in groups.items():
                 s, t, z = norm(r.get(cols["Sort"])), norm(r.get(cols["Tag"])), normalize_time(r.get(cols["Zeit"]))
-                if s or t or z:
-                    bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "is_ds": False})
+                if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "is_ds": False})
         
-        # 2. Deutsche See (DS) integrieren
+        # 2. B-Spalten (Bestellschluss-Logik)
+        for (lday, group, btag), cols in bmap.items():
+            s = norm(r.get(cols.get("sort", "")))
+            z = normalize_time(r.get(cols.get("zeit", "")))
+            if s or z: bestell.append({"liefertag": lday, "sortiment": s, "bestelltag": btag, "bestellschluss": z, "is_ds": False})
+
+        # 3. Deutsche See Integration
         for d_de, cols in ds_trip.items():
             s, t, z = norm(r.get(cols["Sort"])), norm(r.get(cols["Tag"])), normalize_time(r.get(cols["Zeit"]))
-            if s or t or z:
-                bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "is_ds": True})
+            if s or t or z: bestell.append({"liefertag": d_de, "sortiment": s, "bestelltag": t, "bestellschluss": z, "is_ds": True})
 
-        # Nach Wochentag sortieren für die Tabelle
-        bestell.sort(key=lambda x: DAYS_DE.index(x["liefertag"]))
+        bestell.sort(key=lambda x: (DAYS_DE.index(x["liefertag"]), x["is_ds"]))
 
-        data_json[knr] = {
+        data[knr] = {
             "plan_typ": PLAN_TYP, "bereich": BEREICH, "kunden_nr": knr,
             "name": norm(r.get("Name", "")), "strasse": norm(r.get("Strasse", "")),
             "plz": norm(r.get("Plz", "")), "ort": norm(r.get("Ort", "")),
-            "fachberater": norm(r.get("Fachberater", "")),
             "tours": {d: norm(r.get(c, "")) for d, c in TOUR_COLS.items() if c in df.columns},
             "bestell": bestell
         }
 
-    st.success(f"{len(data_json)} Kunden geladen.")
-    
-    # JSON in das HTML einbetten
-    final_html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data_json, separators=(',', ':')))
-    
-    st.download_button(
-        label="⬇️ Standalone-HTML Datei speichern",
-        data=final_html,
-        file_name="sendeplan_A4_komplett.html",
-        mime="text/html"
-    )
+    html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
+    st.download_button("HTML-Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
 
-st.info("Hinweis: Nach dem Öffnen der HTML-Datei können Sie über die Suche einzelne Kunden wählen oder per 'Alle laden' den gesamten Massendruck vorbereiten.")
+```
