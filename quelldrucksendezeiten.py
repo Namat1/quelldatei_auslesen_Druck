@@ -29,15 +29,15 @@ DAY_SHORT_TO_DE = {
 }
 
 # Reihenfolge der Sortimente innerhalb eines Tages (Prio)
-# Basierend auf dem richtigen PDF:
-# 1. Bio-Geflügel (41)
+# Basierend auf dem RICHTIGEN PDF (nicht dem falschen!):
+# 1. Fleisch- & Wurst (21)
 # 2. Geflügel Wiesenhof (1011)
-# 3. Frischfleisch Veredlung (65)
-# 4. Avo-Gewürze (0)
-# 5. Fleisch- & Wurst (21)
+# 3. Bio-Geflügel (41)
+# 4. Frischfleisch Veredlung (65)
+# 5. Avo-Gewürze (0)
 # 6. Werbemittel (91)
 # 7. Pfeiffer etc. (22)
-SORT_PRIO = {"41": 0, "1011": 1, "65": 2, "0": 3, "21": 4, "91": 5, "22": 6}
+SORT_PRIO = {"21": 0, "1011": 1, "41": 2, "65": 3, "0": 4, "91": 5, "22": 6}
 
 TOUR_COLS = {
     "Montag": "Mo",
@@ -136,37 +136,67 @@ def detect_bspalten(columns: List[str]):
     """
     Erkennung für Spalten wie:
     "Mo Z Wiesenhof B_Di" / "Mo L Bio B_Mi" / "Mo Wiesenhof B_Di" etc.
+    UND auch Spalten OHNE "B": "Mit Z 41 Mo" (nur Tag ZL Gruppe Tag)
     
     WICHTIG: Wir extrahieren die Gruppe aus dem Spaltennamen, aber klassifizieren
     später das Sortiment anhand seines tatsächlichen Namens neu!
     """
-    rx = re.compile(
+    # Pattern MIT "B"
+    rx_b = re.compile(
         r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
         r"(?:(Z|L)\s+)?(.+?)\s+B[_ ]?(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
         re.IGNORECASE
     )
+    # Pattern OHNE "B" (nur für Z/L Spalten!)
+    rx_no_b = re.compile(
+        r"^(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
+        r"(Z|L)\s+(.+?)\s+(Mo|Die|Di|Mitt|Mit|Mi|Don|Donn|Do|Fr|Sam|Sa)$",
+        re.IGNORECASE
+    )
+    
     mapping = {}
+    
+    # ERSTE PHASE: Verarbeite Spalten OHNE "B" (diese haben Priorität für Z/L!)
     for c in columns:
-        m = rx.match(c.strip())
-        if not m:
-            continue
+        m = rx_no_b.match(c.strip())
+        if m:
+            day_de = DAY_SHORT_TO_DE.get(m.group(1))
+            zl = m.group(2).upper()  # Z oder L ist required hier
+            group_text = m.group(3).strip()
+            bestell_de_from_name = DAY_SHORT_TO_DE.get(m.group(4))
 
-        day_de = DAY_SHORT_TO_DE.get(m.group(1))
-        zl = (m.group(2) or "").upper()
-        group_text = m.group(3).strip()
-        bestell_de_from_name = DAY_SHORT_TO_DE.get(m.group(4))
+            if day_de and bestell_de_from_name:
+                key = (day_de, group_text, bestell_de_from_name)
+                mapping.setdefault(key, {})
+                if zl == "Z":
+                    mapping[key]["zeit"] = c
+                elif zl == "L":
+                    mapping[key]["l"] = c
+    
+    # ZWEITE PHASE: Verarbeite Spalten MIT "B" (überschreiben NICHT existierende Z/L!)
+    for c in columns:
+        m = rx_b.match(c.strip())
+        if m:
+            day_de = DAY_SHORT_TO_DE.get(m.group(1))
+            zl = (m.group(2) or "").upper()
+            group_text = m.group(3).strip()
+            bestell_de_from_name = DAY_SHORT_TO_DE.get(m.group(4))
 
-        if day_de and bestell_de_from_name:
-            # Verwende group_text als Key (nicht die ID), damit wir später den Bestelltag aus L-Spalte holen können
-            key = (day_de, group_text, bestell_de_from_name)
-            mapping.setdefault(key, {})
-            if zl == "Z":
-                mapping[key]["zeit"] = c
-            elif zl == "L":
-                mapping[key]["l"] = c
-            else:
-                mapping[key]["sort"] = c
-                mapping[key]["group_text"] = group_text
+            if day_de and bestell_de_from_name:
+                key = (day_de, group_text, bestell_de_from_name)
+                mapping.setdefault(key, {})
+                if zl == "Z":
+                    # NUR setzen wenn noch keine Zeit-Spalte vorhanden!
+                    if "zeit" not in mapping[key]:
+                        mapping[key]["zeit"] = c
+                elif zl == "L":
+                    # NUR setzen wenn noch keine L-Spalte vorhanden!
+                    if "l" not in mapping[key]:
+                        mapping[key]["l"] = c
+                else:
+                    mapping[key]["sort"] = c
+                    mapping[key]["group_text"] = group_text
+    
     return mapping
 
 
@@ -456,7 +486,7 @@ if up:
                             "prio": SORT_PRIO.get(actual_gid, 50)
                         })
 
-            # 2) B-Spalten - WICHTIG: Verwende Bestelltag AUS SPALTENNAMEN (nicht L-Spalte!)
+            # 2) B-Spalten - WICHTIG: Verwende L-Spalte für Bestelltag (wenn vorhanden)!
             keys = [k for k in bmap.keys() if k[0] == d_de]
             for k in keys:
                 f = bmap[k]
@@ -464,9 +494,14 @@ if up:
                 s = norm(r.get(f.get("sort", "")))
                 z = safe_time(r.get(f.get("zeit", "")))
                 
-                # Verwende Bestelltag AUS SPALTENNAMEN (k[2])
-                # Die L-Spalten sind in der Excel oft fehlerhaft!
-                tag = k[2]  # bestell_de_from_name aus Spaltennamen
+                # Verwende L-Spalte für Bestelltag (wenn vorhanden), sonst Spaltennamen
+                l_col = f.get("l")
+                if l_col:
+                    tag = norm(r.get(l_col, ""))
+                    if not tag:
+                        tag = k[2]  # Fallback auf Spaltennamen wenn L-Spalte leer
+                else:
+                    tag = k[2]  # Kein L-Spalte -> verwende Spaltennamen
 
                 if s or z:
                     # Klassifiziere das Sortiment nach seinem NAMEN!
@@ -493,7 +528,7 @@ if up:
                             "sortiment": s,
                             "bestelltag": tag,
                             "bestellschluss": t,
-                            "prio": 80
+                            "prio": 4.5  # Zwischen Avo-Gewürze (4) und Werbemittel (5)
                         })
 
             day_items.sort(key=lambda x: x["prio"])
