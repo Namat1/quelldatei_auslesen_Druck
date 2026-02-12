@@ -1,13 +1,3 @@
-Das liegt wahrscheinlich daran, dass die Logik für die **B_-Spalten** (die in deinem ersten Entwurf vorhanden war) in der Zwischenversion durch die Vereinfachung für Deutsche See überschrieben wurde.
-
-Hier ist das **vollständige Skript**, das alle Logiken vereint:
-
-1. **B_-Mapping** (Bestellschluss-Logik).
-2. **Tripel-Logik** (Standard-Spalten).
-3. **Deutsche See Integration** (direkt in die Wochentage).
-4. **Auto-Fit** für A4.
-
-```python
 # app.py
 # ------------------------------------------------------------
 # Excel -> Standalone-HTML (KOMPLETT: B-Spalten, Tripel & Deutsche See)
@@ -250,5 +240,3 @@ if up:
 
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
     st.download_button("HTML-Sendeplan herunterladen", data=html, file_name="sendeplan.html", mime="text/html")
-
-```
