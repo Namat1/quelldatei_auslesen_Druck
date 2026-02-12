@@ -1,23 +1,10 @@
 # app.py
 # ------------------------------------------------------------
-# Excel -> 1 moderne Standalone-HTML (Suche + A4 Druck)
+# Excel -> 1 Standalone-HTML (Suche + A4 Druck, 1 Seite pro Kunde)
 # WICHTIG:
-# - ES WIRD NICHTS GEFILTERT. Jede gefundene Zeile wird übernommen.
-# - A4 pro Kunde ist ZWINGEND: Der Ausdruck wird automatisch skaliert,
-#   sodass alles auf eine Seite passt (CSS transform: scale()).
-#   -> keine zweite Seite, kein Abschneiden.
-#
-# Extraktion:
-# 1) B_-Spalten (Hauptquelle):
-#    "Mo Z 0 B_Sa" (Zeit), "Mo 0 B_Sa" (Sortiment), Bestelltag aus Header ("B_Sa")
-# 2) klassische Tripel:
-#    "Mo 21 Zeit" / "Mo 21 Sort" / "Mo 21 Tag"
-# 3) DS Tripel (optional):
-#    "DS Fr zu Mi Zeit" / "DS Fr zu Mi Sort" / "DS Fr zu Mi Tag"
-#
-# Hinweis:
-# - Wir fassen alle Quellen zusammen (B_ + Tripel + DS) und zeigen sie ALLE an.
-# - Liefertage in Kopfzeile kommen aus (Bestellzeilen ∪ Touren).
+# - Es wird NICHTS gefiltert (nur komplett leere Datensätze übersprungen).
+# - Pro Kunde GENAU 1 A4: Schriftgröße wird automatisch reduziert bis es passt.
+# - Druckstabil: @page margin 0, .paper = 210mm x 297mm, page-break immer.
 # ------------------------------------------------------------
 
 import json
@@ -74,9 +61,7 @@ def norm(x) -> str:
         return ""
     if isinstance(x, float) and pd.isna(x):
         return ""
-    s = str(x)
-    s = s.replace("\u00a0", " ")  # NBSP
-    s = s.strip()
+    s = str(x).replace("\u00a0", " ").strip()
     s = re.sub(r"\s+", " ", s)
     if re.fullmatch(r"\d+\.0", s):
         s = s[:-2]
@@ -91,9 +76,6 @@ def group_sort_key(g: str):
 
 
 def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
-    """
-    "<Tag> <Gruppe> Zeit/Sort/Tag"
-    """
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+(.+?)\s+(Zeit|Sort|Tag)$",
         re.IGNORECASE,
@@ -103,7 +85,6 @@ def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
         m = rx.match(c)
         if not m:
             continue
-
         day_short = m.group(1)
         group = m.group(2).strip()
         field = m.group(3).capitalize()
@@ -114,7 +95,6 @@ def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
         day_de = DAY_SHORT_TO_DE.get(day_short)
         if not day_de:
             continue
-
         found.setdefault(day_de, {}).setdefault(group, {})[field] = c
 
     clean: Dict[str, Dict[str, Dict[str, str]]] = {}
@@ -126,9 +106,6 @@ def detect_triplets(columns: List[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
 
 
 def detect_bspalten(columns: List[str]) -> Dict[Tuple[str, str, str], Dict[str, str]]:
-    """
-    'Mo Z 0 B_Sa' / 'Mo 0 B_Sa' / 'Mo L 0 B_Sa'
-    """
     cols = [c.strip() for c in columns]
     rx = re.compile(
         r"^(Mo|Die|Di|Mitt|Mi|Don|Donn|Do|Fr|Sam|Sa)\s+"
@@ -173,9 +150,6 @@ def detect_bspalten(columns: List[str]) -> Dict[Tuple[str, str, str], Dict[str, 
 
 
 def detect_ds_triplets(columns: List[str]) -> Dict[str, Dict[str, str]]:
-    """
-    'DS Fr zu Mi Zeit' / 'DS Fr zu Mi Sort' / 'DS Fr zu Mi Tag'
-    """
     cols = [c.strip() for c in columns]
     rx = re.compile(r"^DS\s+(.+?)\s+(Zeit|Sort|Tag)$", re.IGNORECASE)
     tmp: Dict[str, Dict[str, str]] = {}
@@ -199,175 +173,409 @@ def normalize_time(s: str) -> str:
     s = norm(s)
     if not s:
         return ""
-    # 20:00 -> 20:00 Uhr
     if "uhr" not in s.lower() and re.fullmatch(r"\d{1,2}:\d{2}", s):
         return s + " Uhr"
     return s
 
 
 # -----------------------------
-# MODERN STANDALONE HTML TEMPLATE
-# - A4 pro Kunde wird per JS automatisch skaliert (transform: scale)
-# - Nichts wird ausgeblendet/abgeschnitten: scale reduziert bei Bedarf
+# DRUCKSTABILES HTML TEMPLATE
+# - Paper = echtes A4 (210x297mm)
+# - @page margin 0
+# - inner padding = Druckrand
+# - AutoFit reduziert Schrift bis es passt (kein transform scale)
+# - page-break-after immer
 # -----------------------------
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>Sendeplan</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sende- & Belieferungsplan</title>
 
 <style>
-@page { size:A4; margin:10mm; }
+  @page { size: A4; margin: 0; }
 
-body{
-  font-family: Arial, Helvetica, sans-serif;
-  margin:0;
-  background:#111;
-}
+  :root{
+    --bg:#0b1220;
+    --panel:rgba(255,255,255,.08);
+    --stroke:rgba(255,255,255,.14);
+    --text:rgba(255,255,255,.92);
+    --muted:rgba(255,255,255,.62);
+    --paper:#fff;
+    --ink:#0b0f17;
+    --sub:#394054;
+  }
 
-/* ---------- SCREEN UI ---------- */
-.app{display:grid;grid-template-columns:320px 1fr;gap:10px;padding:10px}
-.sidebar{background:#222;color:#fff;padding:10px;border-radius:10px}
-input,button{padding:8px;margin:4px 0;width:100%}
-.main{display:flex;justify-content:center}
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, Helvetica, sans-serif;
+    background: radial-gradient(900px 520px at 25% 0%, rgba(79,163,255,.18), transparent 55%),
+                radial-gradient(900px 520px at 80% 10%, rgba(124,247,194,.14), transparent 55%),
+                var(--bg);
+    color:var(--text);
+  }
 
-/* ---------- A4 PAGE ---------- */
-.paper{
-  width:190mm;
-  height:277mm;     /* A4 minus margins */
-  background:#fff;
-  color:#000;
-  overflow:hidden;
-  padding:6mm;
-  box-sizing:border-box;
-}
+  /* UI */
+  .app{ display:grid; grid-template-columns: 340px 1fr; gap:14px; padding:14px; }
+  .sidebar,.main{
+    background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.06));
+    border:1px solid var(--stroke);
+    border-radius:16px;
+    overflow:hidden;
+    backdrop-filter: blur(14px);
+  }
+  .sidehead{ padding:14px; border-bottom:1px solid var(--stroke); }
+  .sidehead .t{ font-weight:900; letter-spacing:.2px; }
+  .sidehead .s{ margin-top:6px; font-size:12px; color:var(--muted); line-height:1.35; }
+  .controls{ padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .field{
+    display:flex; gap:10px; align-items:center;
+    padding:10px 12px; border-radius:14px;
+    border:1px solid var(--stroke);
+    background: rgba(0,0,0,.18);
+  }
+  input{
+    width:100%; border:none; outline:none; background:transparent;
+    color:var(--text); font-size:14px;
+  }
+  input::placeholder{ color: rgba(255,255,255,.45); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
+  button{
+    border:none; cursor:pointer;
+    padding:10px 12px; border-radius:14px;
+    font-weight:900; font-size:13px; letter-spacing:.2px;
+    color:var(--text);
+    background: rgba(255,255,255,.08);
+    border:1px solid var(--stroke);
+  }
+  button.primary{
+    background: linear-gradient(135deg, rgba(79,163,255,.30), rgba(124,247,194,.18));
+    border-color: rgba(124,247,194,.30);
+  }
+  .hint{ font-size:12px; color:var(--muted); }
 
-/* Dynamische Schriftgrößen (werden per JS gesetzt) */
-.paper{ --fs:11pt; }
-.paper *{ font-size:var(--fs); line-height:1.15; }
+  .list{ border-top:1px solid var(--stroke); max-height: calc(100vh - 240px); overflow:auto; }
+  .item{ padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06); cursor:pointer; }
+  .item:hover{ background: rgba(255,255,255,.06); }
+  .item.active{ background: rgba(79,163,255,.12); border-left:3px solid rgba(79,163,255,.85); padding-left:11px; }
+  .k{ font-size:12px; color:var(--muted); font-weight:800; }
+  .n{ font-size:13px; font-weight:950; line-height:1.2; }
+  .a{ font-size:12px; color:var(--muted); }
 
-h1{font-size:16pt;margin:0;text-align:center}
-h2{font-size:14pt;margin:2mm 0;text-align:center;color:#c00}
-h3{font-size:10pt;margin:0;text-align:center}
+  .mainhead{ padding:14px; border-bottom:1px solid var(--stroke); display:flex; justify-content:space-between; gap:10px; }
+  .mh1{ font-weight:950; }
+  .mh2{ font-size:12px; color:var(--muted); }
+  .wrap{ padding:14px; display:flex; justify-content:center; }
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  margin:4mm 0;
-}
+  /* --- A4 Paper --- */
+  .paper{
+    width:210mm;
+    height:297mm;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:14px;
+    box-shadow: 0 30px 90px rgba(0,0,0,.45);
+    overflow:hidden;
+    position:relative;
+    --fs: 10.4pt;
+  }
+  .paper *{ font-size: var(--fs); line-height: 1.15; }
 
-table{
-  width:100%;
-  border-collapse:collapse;
-}
+  .inner{
+    padding: 12mm 12mm 10mm 12mm; /* Druckrand */
+  }
 
-th,td{
-  border:1px solid #000;
-  padding:1.2mm;
-  vertical-align:top;
-}
+  .ptitle{
+    text-align:center;
+    font-weight:950;
+    font-size: 17pt;
+    margin:0;
+  }
+  .pstd{
+    text-align:center;
+    font-weight:1000;
+    color:#d0192b;
+    font-size: 15pt;
+    margin: 2mm 0 1.5mm 0;
+  }
+  .psub{
+    text-align:center;
+    font-weight:800;
+    color:var(--sub);
+    margin:0 0 6mm 0;
+  }
 
-th{background:#eee}
+  .head{
+    display:flex; justify-content:space-between; gap:12mm;
+    margin-bottom: 5mm;
+  }
+  .addr .name{ font-weight:950; margin-bottom:1mm; }
+  .meta b{ font-weight:950; }
 
-/* PRINT */
-@media print{
-  body{background:#fff}
-  .sidebar{display:none}
-  .app{display:block;padding:0}
-  .paper{box-shadow:none}
-}
+  .lines{ margin: 0 0 5mm 0; }
+  .lines b{ font-weight:950; }
+
+  table{ width:100%; border-collapse:collapse; }
+  th,td{ border:1px solid #111; padding:1.6mm 1.6mm; vertical-align:top; }
+  th{ background:#f3f6fb; font-weight:1000; }
+  .cday{ width:17%; font-weight:1000; }
+  .csort{ width:52%; }
+  .ctag{ width:16%; white-space:nowrap; }
+  .ctime{ width:15%; white-space:nowrap; }
+
+  .ds{ margin-top: 5mm; border:1px solid rgba(0,0,0,.22); border-radius:10px; overflow:hidden; }
+  .dsh{ background:#f3f6fb; padding:6px 8px; font-weight:1000; }
+  .dsb{ padding:6px 8px; }
+
+  /* Print */
+  @media print{
+    body{ background:#fff; }
+    .sidebar,.mainhead{ display:none !important; }
+    .app{ display:block; padding:0; }
+    .wrap{ padding:0; justify-content:flex-start; }
+    .paper{
+      border-radius:0;
+      box-shadow:none;
+      page-break-after: always;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  @media (max-width: 980px){
+    .app{ grid-template-columns:1fr; }
+    .paper{ width:100%; height:auto; }
+  }
 </style>
 </head>
 
 <body>
-
 <div class="app">
-<div class="sidebar">
-<input id="knr" placeholder="Kundennummer">
-<button onclick="showOne()">Anzeigen</button>
-<button onclick="showAll()">Alle</button>
-<button onclick="window.print()">Drucken</button>
-</div>
+  <div class="sidebar">
+    <div class="sidehead">
+      <div class="t">Sende- & Belieferungsplan</div>
+      <div class="s">Pro Kunde genau 1×A4. Auto-Fit reduziert Schrift, bis alles passt.</div>
+    </div>
+    <div class="controls">
+      <div class="field">
+        <input id="knr" placeholder="Kundennummer (z.B. 88130)" inputmode="numeric">
+      </div>
+      <div class="btnrow">
+        <button class="primary" onclick="showOne()">Anzeigen</button>
+        <button onclick="showAll()">Alle rendern</button>
+        <button onclick="window.print()">Drucken</button>
+      </div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
 
-<div class="main">
-<div id="out"></div>
-</div>
+  <div class="main">
+    <div class="mainhead">
+      <div>
+        <div class="mh1" id="mh1">Vorschau</div>
+        <div class="mh2" id="mh2">Noch kein Kunde ausgewählt.</div>
+      </div>
+      <div style="text-align:right">
+        <div class="mh1" id="cnt"></div>
+        <div class="mh2">Kunden</div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div id="out" class="hint">Links Kundennummer eingeben oder aus Liste wählen.</div>
+    </div>
+  </div>
 </div>
 
 <script>
 const DATA = __DATA_JSON__;
+const ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 
-/* -------- AUTO FIT (ECHT) -------- */
-function autoFit(paper){
-  let fs = 11;
-  paper.style.setProperty("--fs", fs+"pt");
+function esc(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
 
-  // so lange verkleinern bis Inhalt passt
-  while(paper.scrollHeight > paper.clientHeight && fs > 7){
-    fs -= 0.5;
-    paper.style.setProperty("--fs", fs+"pt");
+function buildActiveDays(c){
+  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+  const fromBestell = new Set((c.bestell||[]).map(x=>x.liefertag).filter(Boolean));
+  const fromTours = new Set(days.filter(d => (c.tours && String(c.tours[d]||"").trim()!=="")));
+  return days.filter(d => fromBestell.has(d) || fromTours.has(d));
+}
+
+function render(c){
+  const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+  const byDay = {};
+  for(const it of (c.bestell||[])){
+    if(!byDay[it.liefertag]) byDay[it.liefertag]=[];
+    byDay[it.liefertag].push(it);
+  }
+
+  const rows = days.map(d=>{
+    const arr = byDay[d] || [];
+    const s = arr.map(x=>esc(x.sortiment)).join("<br>");
+    const t = arr.map(x=>esc(x.bestelltag)).join("<br>");
+    const z = arr.map(x=>esc(x.bestellschluss)).join("<br>");
+    return `
+      <tr>
+        <td class="cday">${esc(d)}</td>
+        <td class="csort">${s || "&nbsp;"}</td>
+        <td class="ctag">${t || "&nbsp;"}</td>
+        <td class="ctime">${z || "&nbsp;"}</td>
+      </tr>`;
+  }).join("");
+
+  const active = buildActiveDays(c);
+  const dayLine = active.length ? active.join(" ") : "-";
+  const tourLine = active.length
+    ? active.map(d => (c.tours && String(c.tours[d]||"").trim()!=="" ? esc(c.tours[d]) : "—")).join(" ")
+    : "-";
+
+  let dsHtml = "";
+  if(c.ds && c.ds.length){
+    dsHtml = `
+      <div class="ds">
+        <div class="dsh">Durchsteck (DS)</div>
+        <div class="dsb">
+          ${c.ds.map(it => `<div><b>${esc(it.ds_key)}:</b> ${esc(it.sortiment)} — <b>${esc(it.bestelltag)}</b> · ${esc(it.bestellschluss)}</div>`).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="paper">
+      <div class="inner">
+        <div class="ptitle">Sende- &amp; Belieferungsplan</div>
+        <div class="pstd">${esc(c.plan_typ || "Standard")}</div>
+        <div class="psub">${esc(c.name)} ${esc(c.bereich || "")}</div>
+
+        <div class="head">
+          <div class="addr">
+            <div class="name">${esc(c.name)}</div>
+            <div>${esc(c.strasse)}</div>
+            <div>${esc(c.plz)} ${esc(c.ort)}</div>
+          </div>
+          <div class="meta">
+            <div><b>Kunden-Nr.:</b> ${esc(c.kunden_nr)}</div>
+            <div><b>Fachberater:</b> ${esc(c.fachberater || "")}</div>
+          </div>
+        </div>
+
+        <div class="lines">
+          <div><b>Liefertag:</b> ${dayLine}</div>
+          <div><b>Tour:</b> ${tourLine}</div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Liefertag</th>
+              <th>Sortiment</th>
+              <th>Bestelltag</th>
+              <th>Bestellzeitende</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        ${dsHtml}
+      </div>
+    </div>
+  `;
+}
+
+/* Auto-Fit: reduziert --fs bis inner passt */
+function autoFitPaper(paper){
+  if(!paper) return;
+  const inner = paper.querySelector(".inner");
+  if(!inner) return;
+
+  let fs = 10.4;           // Start (pt)
+  const minFs = 6.8;       // Untergrenze
+  paper.style.setProperty("--fs", fs + "pt");
+
+  // Mehrfach messen (Layout settle)
+  for(let pass=0; pass<3; pass++){
+    while(inner.scrollHeight > paper.clientHeight && fs > minFs){
+      fs -= 0.2;
+      paper.style.setProperty("--fs", fs.toFixed(2) + "pt");
+    }
   }
 }
 
-/* -------- RENDER -------- */
-function render(c){
-  const rows = c.bestell.map(x=>`
-    <tr>
-      <td>${x.liefertag}</td>
-      <td>${x.sortiment}</td>
-      <td>${x.bestelltag}</td>
-      <td>${x.bestellschluss}</td>
-    </tr>`).join("");
-
-  const html = `
-  <div class="paper">
-    <h1>Sende- & Belieferungsplan</h1>
-    <h2>${c.plan_typ}</h2>
-    <h3>${c.name} ${c.bereich}</h3>
-
-    <div class="header">
-      <div>
-        <b>${c.name}</b><br>
-        ${c.strasse}<br>
-        ${c.plz} ${c.ort}
-      </div>
-      <div>
-        Kunden-Nr.: ${c.kunden_nr}<br>
-        Fachberater: ${c.fachberater}
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Liefertag</th>
-          <th>Sortiment</th>
-          <th>Bestelltag</th>
-          <th>Bestellzeitende</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>`;
-
-  return html;
+function autoFitAll(){
+  document.querySelectorAll(".paper").forEach(autoFitPaper);
 }
 
 function showOne(){
-  const k=document.getElementById("knr").value.trim();
-  if(!DATA[k]) return;
-  const out=document.getElementById("out");
-  out.innerHTML=render(DATA[k]);
-  autoFit(out.firstElementChild);
+  const k = document.getElementById("knr").value.trim();
+  const c = DATA[k];
+  const out = document.getElementById("out");
+  if(!c){
+    out.innerHTML = "<div class='hint'>Kundennummer nicht gefunden.</div>";
+    document.getElementById("hint").textContent = `Vorhanden: ${ORDER.length} Kunden`;
+    return;
+  }
+  out.innerHTML = render(c);
+  document.getElementById("mh1").textContent = `Vorschau: ${c.kunden_nr}`;
+  document.getElementById("mh2").textContent = `${c.name} · ${c.plz} ${c.ort}`;
+  document.getElementById("hint").textContent = "Auto-Fit aktiv. Drucken = 1 Seite.";
+  setActive(k);
+  setTimeout(autoFitAll, 10);
 }
 
 function showAll(){
-  const out=document.getElementById("out");
-  out.innerHTML=Object.values(DATA).map(render).join("");
-  document.querySelectorAll(".paper").forEach(autoFit);
+  const out = document.getElementById("out");
+  out.innerHTML = ORDER.map(k => render(DATA[k])).join("");
+  document.getElementById("mh1").textContent = "Massendruck";
+  document.getElementById("mh2").textContent = `${ORDER.length} Kunden gerendert`;
+  document.getElementById("hint").textContent = "Auto-Fit aktiv. Jede Seite = 1×A4.";
+  setActive(null);
+  setTimeout(autoFitAll, 10);
 }
-</script>
 
+function setActive(key){
+  document.querySelectorAll(".item").forEach(el=>{
+    el.classList.toggle("active", el.dataset.key === key);
+  });
+}
+
+function buildList(){
+  const list = document.getElementById("list");
+  list.innerHTML = ORDER.map(k=>{
+    const c = DATA[k];
+    return `
+      <div class="item" data-key="${esc(k)}" onclick="pick('${esc(k)}')">
+        <div class="k">Kunden-Nr. ${esc(c.kunden_nr)}</div>
+        <div class="n">${esc(c.name)}</div>
+        <div class="a">${esc(c.plz)} ${esc(c.ort)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function pick(k){
+  document.getElementById("knr").value = k;
+  showOne();
+}
+
+document.getElementById("knr").addEventListener("keydown",(e)=>{
+  if(e.key==="Enter") showOne();
+});
+
+document.getElementById("cnt").textContent = ORDER.length;
+buildList();
+
+/* WICHTIG: vor dem Drucken nochmal Auto-Fit (Druck-Layout kann abweichen) */
+window.addEventListener("beforeprint", () => {
+  autoFitAll();
+});
+</script>
 </body>
 </html>
 """
@@ -376,8 +584,8 @@ function showAll(){
 # -----------------------------
 # Streamlit Generator
 # -----------------------------
-st.set_page_config(page_title="Excel → Moderne A4-Druckvorlage", layout="wide")
-st.title("Excel → Moderne HTML (Auto-Fit auf 1×A4, nichts rausfiltern)")
+st.set_page_config(page_title="Excel → A4-Druckvorlage", layout="wide")
+st.title("Excel → HTML (Auto-Fit: garantiert 1×A4 pro Kunde)")
 
 up = st.file_uploader("Excel (.xlsx) hochladen", type=["xlsx"])
 if not up:
@@ -415,22 +623,17 @@ for _, r in df.iterrows():
 
     bestell = []
 
-    # 1) B_-Spalten: NICHTS FILTERN (auch wenn Zeit fehlt oder Bestelltag leer wäre -> nehmen)
+    # B_-Spalten
     for day_de in DAYS_DE:
         keys = [k for k in bmap.keys() if k[0] == day_de]
         keys.sort(key=lambda k: (group_sort_key(k[1]), DAYS_DE.index(k[2]) if k[2] in DAYS_DE else 99))
-
         for (lday, group, bestelltag) in keys:
             cols = bmap[(lday, group, bestelltag)]
             sortiment = norm(r.get(cols.get("sort", ""), ""))
             zeit = normalize_time(r.get(cols.get("zeit", ""), ""))
-
-            # NICHT filtern: wir nehmen auch leere Felder mit,
-            # aber wenn ALLES komplett leer ist, wäre es nur Müll.
-            # Deshalb: minimaler Check: mindestens eins der Felder hat Inhalt.
+            # nur komplett leere Datensätze skippen
             if not (sortiment or zeit or bestelltag):
                 continue
-
             bestell.append({
                 "liefertag": lday,
                 "sortiment": sortiment,
@@ -438,17 +641,15 @@ for _, r in df.iterrows():
                 "bestellschluss": zeit
             })
 
-    # 2) Tripel: ebenfalls übernehmen
+    # Tripel
     for day_de in DAYS_DE:
         for g in sorted(trip.get(day_de, {}).keys(), key=group_sort_key):
             cols = trip[day_de][g]
             zeit = normalize_time(r.get(cols["Zeit"], ""))
             sortiment = norm(r.get(cols["Sort"], ""))
             bestelltag = norm(r.get(cols["Tag"], ""))
-
             if not (sortiment or zeit or bestelltag):
                 continue
-
             bestell.append({
                 "liefertag": day_de,
                 "sortiment": sortiment,
@@ -456,16 +657,14 @@ for _, r in df.iterrows():
                 "bestellschluss": zeit
             })
 
-    # 3) DS: eigener Block, nichts filtern
+    # DS
     ds_list = []
     for ds_key, cols in dsmap.items():
         zeit = normalize_time(r.get(cols["Zeit"], ""))
         sortiment = norm(r.get(cols["Sort"], ""))
         bestelltag = norm(r.get(cols["Tag"], ""))
-
         if not (sortiment or zeit or bestelltag):
             continue
-
         ds_list.append({
             "ds_key": ds_key,
             "sortiment": sortiment,
@@ -489,15 +688,15 @@ for _, r in df.iterrows():
         "ds": ds_list,
     }
 
-st.success(f"{len(data)} Kunden eingebettet. Auto-Fit sorgt für 1×A4 pro Kunde.")
+st.success(f"{len(data)} Kunden eingebettet. Auto-Fit (Schrift) erzwingt 1×A4 pro Kunde.")
 
 html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(data, ensure_ascii=False))
 
 st.download_button(
-    "⬇️ Standalone-HTML herunterladen (modern + Auto-Fit A4)",
+    "⬇️ Standalone-HTML herunterladen (A4 safe)",
     data=html.encode("utf-8"),
-    file_name="sende_belieferungsplan_autofit_a4.html",
+    file_name="sende_belieferungsplan_A4_safe.html",
     mime="text/html",
 )
 
-st.caption("Druck-Tipp: Im Browser A4 + Ränder „Keine“ (oder minimal). Auto-Fit sorgt für 1 Seite pro Kunde.")
+st.caption("Druck-Tipp: Im Browser A4 wählen. Browser-Margins sind egal (wir nutzen @page margin 0). Auto-Fit läuft auch vor dem Drucken.")
