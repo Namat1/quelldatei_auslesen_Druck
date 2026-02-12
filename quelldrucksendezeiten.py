@@ -258,7 +258,7 @@ def detect_ds_triplets(columns: List[str]):
     return tmp
 
 
-# --- HTML TEMPLATE (A4 FIT) ---
+# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -276,45 +276,67 @@ HTML_TEMPLATE = """<!doctype html>
   .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
   .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
-  /* Papier */
+  /* Papier Container - Fixed A4 Größe */
   .paper{
     width: 210mm;
-    height: 297mm;                 /* fix auf A4 */
+    height: 297mm;                 /* Fixed A4 Höhe */
     background:#fff;
     color:#000;
-    padding: 8mm;                  /* kompakter */
     box-shadow: 0 0 20px rgba(0,0,0,.5);
-    display:flex;
-    flex-direction:column;
-
-    --fs: 10.5pt;                  /* kleiner */
-    --lh: 1.25;
+    position: relative;
+    overflow: hidden;              /* Verhindert overflow außerhalb */
   }
 
-  .paper *{ font-size: var(--fs); line-height: var(--lh); }
+  /* Scrollbarer Inhalt */
+  .paper-content{
+    width: 100%;
+    height: 100%;
+    padding: 8mm;                  /* Padding im scrollbaren Bereich */
+    overflow-y: auto;              /* Vertikaler Scrollbalken */
+    overflow-x: hidden;
+  }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.55em; margin:0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:1mm 0; font-size:1.15em; }
-  .psub{ text-align:center; color:#333; margin: 0 0 4mm 0; font-weight:700; }
+  /* Scrollbalken-Styling */
+  .paper-content::-webkit-scrollbar {
+    width: 10px;
+  }
+  .paper-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  .paper-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+  }
+  .paper-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  /* Kompaktere Schriftgrößen */
+  .paper-content *{ font-size: 9pt; line-height: 1.2; }
+
+  .ptitle{ text-align:center; font-weight:900; font-size:1.4em; margin:0 0 1mm 0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.1em; }
+  .psub{ text-align:center; color:#333; margin: 0 0 2mm 0; font-weight:700; font-size:0.95em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:8mm;
-    margin-bottom:3mm;
+    gap:6mm;
+    margin-bottom:2mm;
     border-bottom:1.5px solid #000;
-    padding-bottom:2mm;
+    padding-bottom:1.5mm;
+    font-size:8.5pt;
   }
 
-  .tour-info { margin-bottom: 3mm; }
+  .tour-info { margin-bottom: 2mm; }
 
   .tour-table { width:100%; border-collapse: collapse; margin-top: 1mm; table-layout: fixed; }
-  .tour-table th { background:#eee; font-size:0.85em; padding:2px 0; border:1px solid #000; }
-  .tour-table td { border:1px solid #000; padding:4px 0; text-align:center; font-weight:800; font-size:1.0em; }
+  .tour-table th { background:#eee; font-size:0.8em; padding:1px 0; border:1px solid #000; }
+  .tour-table td { border:1px solid #000; padding:3px 0; text-align:center; font-weight:800; font-size:0.95em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border:2px solid #000; }
-  table.main-table th { border:1px solid #000; padding:5px 6px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.9em; }
-  table.main-table td { border:1px solid #000; padding:5px 6px; vertical-align: top; word-wrap: break-word; overflow-wrap:anywhere; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout: fixed; border:2px solid #000; margin-top:2mm; }
+  table.main-table th { border:1px solid #000; padding:4px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
+  table.main-table td { border:1px solid #000; padding:4px 4px; vertical-align: top; word-wrap: break-word; overflow-wrap:anywhere; font-size:0.9em; }
 
   .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
 
@@ -328,9 +350,15 @@ HTML_TEMPLATE = """<!doctype html>
       margin:0;
       width: auto;
       height: auto;
+      overflow: visible;
       page-break-after: always;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+    }
+    .paper-content{
+      overflow: visible;
+      height: auto;
+      padding: 8mm;
     }
   }
 </style>
@@ -380,59 +408,35 @@ function render(c){
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
   return `<div class="paper">
-    <div class="ptitle">Sende- &amp; Belieferungsplan</div>
-    <div class="pstd">${esc(c.plan_typ)}</div>
-    <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
+    <div class="paper-content">
+      <div class="ptitle">Sende- &amp; Belieferungsplan</div>
+      <div class="pstd">${esc(c.plan_typ)}</div>
+      <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
 
-    <div class="head-box">
-      <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
-      <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
-    </div>
+      <div class="head-box">
+        <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
+        <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
+      </div>
 
-    <div class="tour-info">
-      <table class="tour-table">
-        <thead><tr>${tourHead}</tr></thead>
-        <tbody><tr>${tourRow}</tr></tbody>
+      <div class="tour-info">
+        <table class="tour-table">
+          <thead><tr>${tourHead}</tr></thead>
+          <tbody><tr>${tourRow}</tr></tbody>
+        </table>
+      </div>
+
+      <table class="main-table">
+        <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
+        <tbody>${tableRows}</tbody>
       </table>
     </div>
-
-    <table class="main-table">
-      <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
-      <tbody>${tableRows}</tbody>
-    </table>
   </div>`;
-}
-
-function autoFit(){
-  document.querySelectorAll(".paper").forEach(p => {
-    let fs = 10.5;
-    let lh = 1.25;
-
-    p.style.setProperty("--fs", fs + "pt");
-    p.style.setProperty("--lh", lh);
-
-    // shrink font until it fits (guard prevents endless loop)
-    let guard = 120;
-    while (p.scrollHeight > p.clientHeight && fs > 8.5 && guard-- > 0) {
-      fs -= 0.25;
-      p.style.setProperty("--fs", fs + "pt");
-    }
-
-    // if still too tall, reduce line-height slightly
-    guard = 60;
-    while (p.scrollHeight > p.clientHeight && lh > 1.10 && guard-- > 0) {
-      lh -= 0.02;
-      p.style.setProperty("--lh", lh.toFixed(2));
-    }
-  });
 }
 
 function showOne(){
   const k = document.getElementById("knr").value.trim();
   if(DATA[k]) {
     document.getElementById("out").innerHTML = render(DATA[k]);
-    // Timeout, damit Layout fertig gerendert ist bevor gemessen wird
-    setTimeout(autoFit, 0);
   }
 }
 
