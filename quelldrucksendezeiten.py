@@ -687,13 +687,17 @@ let DATA = ALL_DATA['direkt'] || {};
 let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
-// Debug: Zeige Daten-Status
-console.log("ALL_DATA:", ALL_DATA);
-console.log("Anzahl Bereiche:", Object.keys(ALL_DATA || {}).length);
-console.log("Direkt Kunden:", Object.keys(DATA).length);
+// Debug: Zeige Daten-Status in Console
+console.log("=== INIT DEBUG ===");
+console.log("ALL_DATA type:", typeof ALL_DATA);
+console.log("ALL_DATA keys:", Object.keys(ALL_DATA || {}));
+console.log("Direkt keys count:", Object.keys(DATA).length);
+console.log("ORDER length:", ORDER.length);
+console.log("First 5 customer numbers:", ORDER.slice(0, 5));
 
 // Zeige Hinweis wenn keine Daten
-if (Object.keys(ALL_DATA || {}).length === 0) {
+if (!ALL_DATA || Object.keys(ALL_DATA).length === 0) {
+  console.error("FEHLER: ALL_DATA ist leer!");
   document.getElementById("out").innerHTML = `
     <div style="color:#ea4335; padding:40px; text-align:center; font-size:16px;">
       <h2>⚠️ Keine Daten gefunden!</h2>
@@ -708,6 +712,17 @@ if (Object.keys(ALL_DATA || {}).length === 0) {
       </ol>
     </div>
   `;
+} else if (Object.keys(DATA).length === 0) {
+  console.error("FEHLER: DATA für Bereich 'direkt' ist leer!");
+  document.getElementById("out").innerHTML = `
+    <div style="color:#f39c12; padding:40px; text-align:center; font-size:16px;">
+      <h2>⚠️ Keine Kunden im Bereich "Direkt"</h2>
+      <p>Verfügbare Bereiche: ${Object.keys(ALL_DATA).join(", ")}</p>
+      <p>Wählen Sie einen anderen Bereich.</p>
+    </div>
+  `;
+} else {
+  console.log("✓ Daten erfolgreich geladen!");
 }
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
@@ -875,8 +890,17 @@ function getAreaName(area){
 }
 
 function updateList(){
+  console.log("=== updateList() aufgerufen ===");
+  console.log("DATA:", DATA);
+  console.log("ORDER:", ORDER);
+  console.log("ORDER.length:", ORDER.length);
+  
+  const listDiv = document.getElementById("list");
+  console.log("list div gefunden:", !!listDiv);
+  
   if (!DATA || Object.keys(DATA).length === 0) {
-    document.getElementById("list").innerHTML = `
+    console.warn("Keine Kunden im aktuellen Bereich");
+    listDiv.innerHTML = `
       <div style="padding:20px; text-align:center; color:#9aa0a6; font-size:13px;">
         <p>Keine Kunden im aktuellen Bereich</p>
       </div>
@@ -884,10 +908,26 @@ function updateList(){
     return;
   }
   
-  document.getElementById("list").innerHTML = ORDER.map(k => {
-    const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
-    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
-  }).join("");
+  console.log("Erstelle HTML für", ORDER.length, "Kunden...");
+  
+  try {
+    const html = ORDER.map((k, idx) => {
+      const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
+      if (idx < 3) {
+        console.log(`Kunde ${idx}: ${k} - ${name}`);
+      }
+      return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
+    }).join("");
+    
+    console.log("HTML erstellt, Länge:", html.length);
+    console.log("Erste 200 Zeichen:", html.substring(0, 200));
+    
+    listDiv.innerHTML = html;
+    console.log("Liste aktualisiert!");
+  } catch(err) {
+    console.error("FEHLER in updateList:", err);
+    listDiv.innerHTML = `<div style="padding:20px; color:red;">Fehler: ${err.message}</div>`;
+  }
 }
 
 function printAll(){
@@ -975,7 +1015,11 @@ function printByDeliveryDay(day){
   setTimeout(() => window.print(), 500);
 }
 
+console.log("=== Script Ende - Rufe updateList() auf ===");
+console.log("Aktueller Bereich:", currentArea);
+console.log("DATA keys:", Object.keys(DATA).length);
 updateList();
+console.log("=== updateList() Aufruf abgeschlossen ===");
 </script>
 </body>
 </html>
