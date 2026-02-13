@@ -1,9 +1,3 @@
-a# quelldrucksendezeiten_fixed.py
-# -----------------------------------------------------------------------------
-# VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
-# + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
-# -----------------------------------------------------------------------------
-
 import json
 import re
 import datetime
