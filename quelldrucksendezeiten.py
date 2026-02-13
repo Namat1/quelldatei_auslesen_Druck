@@ -355,19 +355,19 @@ HTML_TEMPLATE = """<!doctype html>
 
     table, th, td { border-color: transparent !important; }
     .day-header { 
-      background: #d5d8dc !important; 
+      background: #e8eaed !important; 
       color: #2c3e50 !important; 
-      border-top:4px solid #2c3e50 !important; 
-      border-bottom:2px solid #5f6368 !important;
+      border:none !important;
       font-size:1.05em !important;
       padding:4px 3px !important;
     }
     .tour-table th { background: #e8eaed !important; color: #3c4043 !important; }
     .main-table th { background: #e8eaed !important; color: #3c4043 !important; }
     .main-table tbody tr { background: #ffffff !important; }
+    .main-table td { border:none !important; }
     .pstd { color: #d0192b !important; }
     .ptitle { color: #2c3e50 !important; }
-    .head-box { border-bottom-color: #5f6368 !important; }
+    .head-box { border-bottom-color: #5f6368 !important; font-size:11pt !important; line-height:1.4 !important; }
   }
 
   .paper-content *{ font-size: 9pt; line-height: 1.0; }
@@ -376,28 +376,29 @@ HTML_TEMPLATE = """<!doctype html>
   .logo-wrap{
     width: 100%;
     text-align: center;
-    margin: 0 0 0.8mm 0;
+    margin: 0 0 1.2mm 0;
   }
   .logo{
-    height: 10mm;
+    height: 14mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.35em; margin:0 0 0.5mm 0; color:#2c3e50; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.3mm 0; font-size:1.05em; }
-  .psub{ text-align:center; color:#5f6368; margin: 0 0 1mm 0; font-weight:600; font-size:0.9em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.45em; margin:0 0 0.8mm 0; color:#2c3e50; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
+  .psub{ text-align:center; color:#5f6368; margin: 0 0 1.5mm 0; font-weight:600; font-size:1em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:3mm;
-    margin-bottom:1mm;
+    gap:5mm;
+    margin-bottom:2mm;
     border-bottom:2px solid #5f6368;
-    padding-bottom:1mm;
-    font-size:9pt;
-    line-height:1.15;
+    padding-bottom:2mm;
+    font-size:11pt;
+    line-height:1.4;
+    font-weight:600;
   }
 
   .tour-info { margin-bottom:0.8mm; }
@@ -406,17 +407,16 @@ HTML_TEMPLATE = """<!doctype html>
   .tour-table th { background:#e8eaed; font-size:0.7em; padding:1px 1px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
   .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:2px 1px; text-align:center; font-weight:700; font-size:0.8em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:0.8mm; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:1mm; }
   table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:3px 3px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.85em; color:#3c4043; }
-  table.main-table td { border:none; border-bottom:1px solid #f5f5f5; padding:3px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.1; }
+  table.main-table td { border:none; padding:3px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.1; }
   
   table.main-table tbody tr { background:#ffffff; }
 
   .day-header { 
-    background:#d5d8dc !important; 
+    background:#e8eaed !important; 
     font-weight:900 !important; 
-    border-top:4px solid #2c3e50 !important; 
-    border-bottom:2px solid #5f6368 !important; 
+    border:none !important;
     color:#2c3e50 !important;
     font-size:1.05em !important;
     padding:4px 3px !important;
