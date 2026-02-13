@@ -1111,11 +1111,28 @@ if up:
         all_data[area_key] = data
         st.success(f"✓ {sheet_name}: {len(data)} Kunden verarbeitet")
 
+    # Debug: Prüfe Datenstruktur
+    st.write("**Debug-Info:**")
+    st.write(f"- all_data Keys: {list(all_data.keys())}")
+    st.write(f"- Direkt Kunden-Anzahl: {len(all_data.get('direkt', {}))}")
+    
+    # Erstelle JSON
+    try:
+        json_data = json.dumps(all_data, ensure_ascii=False, separators=(",", ":"))
+        st.write(f"- JSON Größe: {len(json_data)} Zeichen")
+        st.write(f"- JSON Start: {json_data[:100]}...")
+    except Exception as e:
+        st.error(f"Fehler beim JSON-Erstellen: {e}")
+        json_data = "{}"
+    
+    # Erstelle HTML
     html = HTML_TEMPLATE.replace(
-        "__DATA_JSON__", json.dumps(all_data, ensure_ascii=False, separators=(",", ":"))
+        "__DATA_JSON__", json_data
     ).replace(
         "__LOGO_DATAURI__", logo_preview_uri or ""
     )
+    
+    st.write(f"- HTML Größe: {len(html)} Zeichen")
 
     st.write("---")
     st.write(f"**Gesamt:** {sum(len(all_data[k]) for k in all_data)} Kunden in {len(all_data)} Bereichen")
