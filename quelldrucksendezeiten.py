@@ -360,50 +360,50 @@ HTML_TEMPLATE = """<!doctype html>
     .header-section { 
       display: flex !important; 
       justify-content: space-between !important; 
-      margin-bottom: 2mm !important; 
-      padding-bottom: 1.5mm !important;
+      margin-bottom: 1.5mm !important; 
+      padding-bottom: 1mm !important;
       border-bottom: 2px solid #e0e0e0 !important;
     }
-    .logo { height: 16mm !important; margin-bottom: 0.8mm !important; }
-    .logo-subtitle { font-size: 0.9em !important; font-weight: 600 !important; }
+    .logo { height: 15mm !important; margin-bottom: 0.5mm !important; }
+    .logo-subtitle { font-size: 0.85em !important; font-weight: 600 !important; }
     .customer-box { 
       background: #f8f9fa !important; 
       border: 2px solid #1e73e8 !important; 
-      padding: 2mm 3mm !important; 
-      font-size: 0.95em !important; 
-      line-height: 1.5 !important; 
+      padding: 1.5mm 2.5mm !important; 
+      font-size: 0.9em !important; 
+      line-height: 1.4 !important; 
     }
     .customer-box strong { font-weight: 700 !important; color: #1e3a5f !important; }
     .address-box { 
       background: #ffffff !important; 
       border: 2px solid #dadce0 !important; 
-      padding: 2mm 3mm !important; 
-      font-size: 0.95em !important; 
-      line-height: 1.4 !important; 
+      padding: 1.5mm 2.5mm !important; 
+      font-size: 0.9em !important; 
+      line-height: 1.3 !important; 
     }
     
-    .main-title { color: #1e3a5f !important; font-size: 1.8em !important; margin: 0 0 0.8mm 0 !important; }
-    .plan-type { color: #f39c12 !important; font-size: 1.3em !important; margin: 0.5mm 0 !important; }
-    .customer-subtitle { font-size: 1em !important; font-weight: 700 !important; margin-top: 0.8mm !important; }
+    .main-title { color: #1e3a5f !important; font-size: 1.7em !important; margin: 0 0 0.5mm 0 !important; }
+    .plan-type { color: #f39c12 !important; font-size: 1.2em !important; margin: 0.3mm 0 !important; }
+    .customer-subtitle { font-size: 0.95em !important; font-weight: 700 !important; margin-top: 0.5mm !important; }
     
-    .title-section { margin-bottom: 2mm !important; }
+    .title-section { margin-bottom: 1.5mm !important; }
     
     .tour-table th { 
       background: #1e3a5f !important; 
       color: white !important; 
-      padding: 1.5mm 0.5mm !important; 
-      font-size: 0.75em !important; 
+      padding: 1mm 0.4mm !important; 
+      font-size: 0.7em !important; 
     }
     .tour-table td { 
       border-right: 1px solid #dadce0 !important; 
-      padding: 1.5mm 0.5mm !important; 
-      font-size: 0.85em !important; 
+      padding: 1mm 0.4mm !important; 
+      font-size: 0.8em !important; 
     }
     
-    .tour-section { margin-bottom: 2mm !important; }
+    .tour-section { margin-bottom: 1.5mm !important; }
     
     .days-grid { 
-      gap: 1.2mm !important; 
+      gap: 1mm !important; 
       margin-top: 0.8mm !important; 
       display: flex !important;
       flex-direction: column !important;
@@ -417,8 +417,8 @@ HTML_TEMPLATE = """<!doctype html>
     }
     
     .day-card-header { 
-      padding: 1mm 2mm !important; 
-      font-size: 0.9em !important; 
+      padding: 0.8mm 2mm !important; 
+      font-size: 0.88em !important; 
     }
     
     .day-card.active .day-card-header { 
@@ -432,31 +432,31 @@ HTML_TEMPLATE = """<!doctype html>
     }
     
     .day-card-body { 
-      padding: 1.2mm 2mm !important; 
+      padding: 1mm 1.5mm !important; 
       display: flex !important;
       flex-wrap: wrap !important;
-      gap: 2mm !important;
+      gap: 1.5mm !important;
     }
     
     .sortiment-item {
-      flex: 0 0 calc(50% - 1mm) !important;
-      padding: 0.8mm !important;
+      flex: 0 0 calc(50% - 0.75mm) !important;
+      padding: 0.6mm 0.8mm !important;
       border: 1px solid #f0f0f0 !important;
       background: #fafafa !important;
     }
     
     .sortiment-name {
-      font-size: 0.82em !important;
+      font-size: 0.78em !important;
       font-weight: 700 !important;
       color: #d0192b !important;
-      margin-bottom: 0.3mm !important;
-      line-height: 1.1 !important;
+      margin-bottom: 0.2mm !important;
+      line-height: 1.05 !important;
     }
     
     .sortiment-detail {
-      font-size: 0.7em !important;
-      margin-top: 0.2mm !important;
-      line-height: 1.1 !important;
+      font-size: 0.68em !important;
+      margin-top: 0.1mm !important;
+      line-height: 1.05 !important;
     }
     
     .no-delivery {
@@ -472,8 +472,8 @@ HTML_TEMPLATE = """<!doctype html>
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2mm;
-    padding-bottom: 1.5mm;
+    margin-bottom: 1.5mm;
+    padding-bottom: 1mm;
     border-bottom: 2px solid #e0e0e0;
   }
 
@@ -484,12 +484,12 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .logo {
-    height: 16mm;
-    margin-bottom: 0.8mm;
+    height: 15mm;
+    margin-bottom: 0.5mm;
   }
 
   .logo-subtitle {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #5f6368;
     font-weight: 600;
   }
@@ -502,9 +502,9 @@ HTML_TEMPLATE = """<!doctype html>
     background: #f8f9fa;
     border: 2px solid #1e73e8;
     border-radius: 4px;
-    padding: 2mm 3mm;
-    font-size: 0.95em;
-    line-height: 1.5;
+    padding: 1.5mm 2.5mm;
+    font-size: 0.9em;
+    line-height: 1.4;
   }
 
   .customer-box strong {
@@ -515,28 +515,28 @@ HTML_TEMPLATE = """<!doctype html>
   /* === TITLE SECTION === */
   .title-section {
     text-align: center;
-    margin-bottom: 2mm;
+    margin-bottom: 1.5mm;
   }
 
   .main-title {
-    font-size: 1.8em;
+    font-size: 1.7em;
     font-weight: 900;
     color: #1e3a5f;
-    margin: 0 0 0.8mm 0;
+    margin: 0 0 0.5mm 0;
   }
 
   .plan-type {
-    font-size: 1.3em;
+    font-size: 1.2em;
     color: #f39c12;
     font-weight: 800;
-    margin: 0.5mm 0;
+    margin: 0.3mm 0;
   }
 
   .customer-subtitle {
-    font-size: 1em;
+    font-size: 0.95em;
     color: #2c3e50;
     font-weight: 700;
-    margin-top: 0.8mm;
+    margin-top: 0.5mm;
   }
 
   /* === ADDRESS BOX === */
@@ -544,16 +544,16 @@ HTML_TEMPLATE = """<!doctype html>
     background: #ffffff;
     border: 2px solid #dadce0;
     border-radius: 4px;
-    padding: 2mm 3mm;
-    margin-bottom: 2mm;
-    font-size: 0.95em;
-    line-height: 1.4;
+    padding: 1.5mm 2.5mm;
+    margin-bottom: 1.5mm;
+    font-size: 0.9em;
+    line-height: 1.3;
     color: #2c3e50;
   }
 
   /* === TOUR SECTION === */
   .tour-section {
-    margin-bottom: 2mm;
+    margin-bottom: 1.5mm;
   }
 
   .tour-table {
@@ -567,8 +567,8 @@ HTML_TEMPLATE = """<!doctype html>
   .tour-table th {
     background: #1e3a5f;
     color: white;
-    padding: 1.5mm 0.5mm;
-    font-size: 0.75em;
+    padding: 1mm 0.4mm;
+    font-size: 0.7em;
     font-weight: 700;
     text-align: center;
     border-right: 1px solid rgba(255,255,255,0.2);
@@ -579,10 +579,10 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .tour-table td {
-    padding: 1.5mm 0.5mm;
+    padding: 1mm 0.4mm;
     text-align: center;
     font-weight: 700;
-    font-size: 0.85em;
+    font-size: 0.8em;
     border-right: 1px solid #dadce0;
     color: #2c3e50;
   }
@@ -595,7 +595,7 @@ HTML_TEMPLATE = """<!doctype html>
   .days-grid {
     display: flex;
     flex-direction: column;
-    gap: 1.2mm;
+    gap: 1mm;
     margin-top: 0.8mm;
   }
 
@@ -610,9 +610,9 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-header {
-    padding: 1mm 2mm;
+    padding: 0.8mm 2mm;
     font-weight: 700;
-    font-size: 0.9em;
+    font-size: 0.88em;
     color: white;
     display: flex;
     align-items: center;
@@ -627,16 +627,16 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-body {
-    padding: 1.2mm 2mm;
+    padding: 1mm 1.5mm;
     background: white;
     display: flex;
     flex-wrap: wrap;
-    gap: 2mm;
+    gap: 1.5mm;
   }
 
   .sortiment-item {
-    flex: 0 0 calc(50% - 1mm);
-    padding: 0.8mm;
+    flex: 0 0 calc(50% - 0.75mm);
+    padding: 0.6mm 0.8mm;
     border: 1px solid #f0f0f0;
     border-radius: 3px;
     background: #fafafa;
@@ -647,18 +647,18 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .sortiment-name {
-    font-size: 0.82em;
+    font-size: 0.78em;
     font-weight: 700;
     color: #d0192b;
-    margin-bottom: 0.3mm;
-    line-height: 1.1;
+    margin-bottom: 0.2mm;
+    line-height: 1.05;
   }
 
   .sortiment-detail {
-    font-size: 0.7em;
+    font-size: 0.68em;
     color: #5f6368;
-    line-height: 1.1;
-    margin-top: 0.2mm;
+    line-height: 1.05;
+    margin-top: 0.1mm;
   }
 
   .sortiment-detail .label {
