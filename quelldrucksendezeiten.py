@@ -357,8 +357,8 @@ HTML_TEMPLATE = """<!doctype html>
     .day-header { 
       background: #e8eaed !important; 
       color: #2c3e50 !important; 
-      font-size:1.05em !important;
-      padding:4px 3px !important;
+      font-size:1.03em !important;
+      padding:3px 2px !important;
     }
     .day-header td {
       border-top: 2px solid #5f6368 !important;
@@ -375,61 +375,61 @@ HTML_TEMPLATE = """<!doctype html>
     table.main-table tbody tr:last-child:not(.day-header) td {
       border-bottom: 2px solid #5f6368 !important;
     }
-    .paper-content * { font-size: 9pt !important; line-height: 1.0 !important; }
-    .tour-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.85em !important; padding:4px 2px !important; }
-    .tour-table td { padding:5px 2px !important; font-size:0.95em !important; }
-    .main-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.9em !important; padding:3px 3px !important; }
-    .main-table td { padding:3px 3px !important; font-size:0.95em !important; line-height:1.1 !important; }
-    .pstd { color: #d0192b !important; font-size:1.3em !important; margin:1mm 0 !important; }
-    .ptitle { color: #2c3e50 !important; font-size:1.65em !important; margin:0 0 1.5mm 0 !important; }
-    .psub { font-size:1.15em !important; margin: 0 0 3mm 0 !important; }
-    .head-box { border-bottom-color: #5f6368 !important; font-size:11.5pt !important; line-height:1.5 !important; gap:6mm !important; margin-bottom:3mm !important; }
-    .logo { height: 18mm !important; }
-    .logo-wrap { margin: 0 0 3mm 0 !important; }
-    .tour-info { margin-bottom:2.5mm !important; }
-    table.main-table { margin-top:3mm !important; }
+    .paper-content * { font-size: 8.5pt !important; line-height: 0.98 !important; }
+    .tour-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.75em !important; padding:2px 1px !important; }
+    .tour-table td { padding:3px 1px !important; font-size:0.85em !important; }
+    .main-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.85em !important; padding:2.5px 2px !important; }
+    .main-table td { padding:2.5px 2px !important; font-size:0.9em !important; line-height:1.08 !important; }
+    .pstd { color: #d0192b !important; font-size:1.2em !important; margin:0.5mm 0 !important; }
+    .ptitle { color: #2c3e50 !important; font-size:1.5em !important; margin:0 0 0.8mm 0 !important; }
+    .psub { font-size:1.05em !important; margin: 0 0 1.5mm 0 !important; }
+    .head-box { border-bottom-color: #5f6368 !important; font-size:10.5pt !important; line-height:1.4 !important; gap:5mm !important; margin-bottom:2mm !important; padding-bottom:2mm !important; }
+    .logo { height: 16mm !important; }
+    .logo-wrap { margin: 0 0 1.5mm 0 !important; }
+    .tour-info { margin-bottom:1.5mm !important; }
+    table.main-table { margin-top:1.5mm !important; }
   }
 
-  .paper-content *{ font-size: 9pt; line-height: 1.0; }
+  .paper-content *{ font-size: 8.5pt; line-height: 0.98; }
 
   /* === LOGO === */
   .logo-wrap{
     width: 100%;
     text-align: center;
-    margin: 0 0 3mm 0;
+    margin: 0 0 1.5mm 0;
   }
   .logo{
-    height: 18mm;
+    height: 16mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.65em; margin:0 0 1.5mm 0; color:#2c3e50; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:1mm 0; font-size:1.3em; }
-  .psub{ text-align:center; color:#5f6368; margin: 0 0 3mm 0; font-weight:600; font-size:1.15em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 0.8mm 0; color:#2c3e50; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.2em; }
+  .psub{ text-align:center; color:#5f6368; margin: 0 0 1.5mm 0; font-weight:600; font-size:1.05em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:6mm;
-    margin-bottom:3mm;
+    gap:5mm;
+    margin-bottom:2mm;
     border-bottom:2px solid #5f6368;
-    padding-bottom:2.5mm;
-    font-size:11.5pt;
-    line-height:1.5;
+    padding-bottom:2mm;
+    font-size:10.5pt;
+    line-height:1.4;
     font-weight:600;
   }
 
-  .tour-info { margin-bottom:2.5mm; }
+  .tour-info { margin-bottom:1.5mm; }
 
   .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#fafafa; }
-  .tour-table th { background:#e8eaed; font-size:0.85em; padding:4px 2px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
-  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:5px 2px; text-align:center; font-weight:700; font-size:0.95em; }
+  .tour-table th { background:#e8eaed; font-size:0.75em; padding:2px 1px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
+  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:3px 1px; text-align:center; font-weight:700; font-size:0.85em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:3mm; }
-  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:3px 3px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.9em; color:#3c4043; }
-  table.main-table td { border:none; padding:3px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.95em; line-height:1.1; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:1.5mm; }
+  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:2.5px 2px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.85em; color:#3c4043; }
+  table.main-table td { border:none; padding:2.5px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.08; }
   
   table.main-table tbody tr { background:#ffffff; }
 
@@ -437,8 +437,8 @@ HTML_TEMPLATE = """<!doctype html>
     background:#e8eaed !important; 
     font-weight:900 !important; 
     color:#2c3e50 !important;
-    font-size:1.05em !important;
-    padding:4px 3px !important;
+    font-size:1.03em !important;
+    padding:3px 2px !important;
   }
   
   /* Rahmen um jeden Tag-Block */
