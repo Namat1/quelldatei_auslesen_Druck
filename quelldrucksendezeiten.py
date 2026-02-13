@@ -355,33 +355,34 @@ HTML_TEMPLATE = """<!doctype html>
 
     table, th, td { border-color: transparent !important; }
     
-    .paper-content * { font-size: 8.5pt !important; line-height: 1.1 !important; }
+    .paper-content * { font-size: 7.5pt !important; line-height: 1.05 !important; }
     
-    .header-section { display: flex !important; justify-content: space-between !important; margin-bottom: 1.5mm !important; }
-    .logo { height: 12mm !important; }
-    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; padding: 1.5mm 2.5mm !important; font-size: 0.85em !important; }
-    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; padding: 1.5mm 2.5mm !important; font-size: 0.85em !important; }
+    .header-section { display: flex !important; justify-content: space-between !important; margin-bottom: 1mm !important; padding-bottom: 0.5mm !important; }
+    .logo { height: 10mm !important; margin-bottom: 0.3mm !important; }
+    .logo-subtitle { font-size: 0.75em !important; }
+    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; padding: 1mm 2mm !important; font-size: 0.8em !important; line-height: 1.3 !important; }
+    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; padding: 1mm 2mm !important; font-size: 0.8em !important; line-height: 1.2 !important; }
     
-    .main-title { color: #1e3a5f !important; font-size: 1.6em !important; }
-    .plan-type { color: #f39c12 !important; font-size: 1.1em !important; }
-    .customer-subtitle { font-size: 0.95em !important; }
+    .main-title { color: #1e3a5f !important; font-size: 1.4em !important; margin: 0 0 0.3mm 0 !important; }
+    .plan-type { color: #f39c12 !important; font-size: 1em !important; margin: 0.2mm 0 !important; }
+    .customer-subtitle { font-size: 0.85em !important; margin-top: 0.3mm !important; }
     
-    .title-section { margin-bottom: 1.5mm !important; }
+    .title-section { margin-bottom: 1mm !important; }
     
-    .tour-table th { background: #1e3a5f !important; color: white !important; padding: 1.2mm 0.5mm !important; font-size: 0.68em !important; }
-    .tour-table td { border-right: 1px solid #dadce0 !important; padding: 1.2mm 0.5mm !important; font-size: 0.8em !important; }
+    .tour-table th { background: #1e3a5f !important; color: white !important; padding: 0.8mm 0.3mm !important; font-size: 0.65em !important; }
+    .tour-table td { border-right: 1px solid #dadce0 !important; padding: 0.8mm 0.3mm !important; font-size: 0.75em !important; }
     
-    .tour-section { margin-bottom: 1.5mm !important; }
+    .tour-section { margin-bottom: 1mm !important; }
     
-    .days-grid { gap: 2mm !important; margin-top: 1mm !important; }
+    .days-grid { gap: 1.5mm !important; margin-top: 0.8mm !important; }
     
     .day-card { 
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+      box-shadow: 0 0.5px 1px rgba(0,0,0,0.1) !important;
       page-break-inside: avoid !important;
       border: 1px solid #e0e0e0 !important;
     }
     
-    .day-card-header { padding: 1.5mm 2mm !important; font-size: 1em !important; }
+    .day-card-header { padding: 1mm 1.5mm !important; font-size: 0.95em !important; }
     
     .day-card.active .day-card-header { 
       background: #1e73e8 !important; 
@@ -393,34 +394,41 @@ HTML_TEMPLATE = """<!doctype html>
       color: white !important;
     }
     
-    .day-card-body { padding: 2mm !important; min-height: 12mm !important; }
+    .day-card-body { padding: 1.5mm !important; min-height: 10mm !important; }
     
     .sortiment-item {
-      padding: 1.5mm 0 !important;
+      padding: 1mm 0 !important;
       border-bottom: 1px solid #f0f0f0 !important;
     }
     
     .sortiment-name {
-      font-size: 0.88em !important;
+      font-size: 0.85em !important;
       font-weight: 600 !important;
-      margin-bottom: 0.5mm !important;
+      margin-bottom: 0.3mm !important;
+      line-height: 1.15 !important;
     }
     
     .sortiment-detail {
-      font-size: 0.78em !important;
-      margin-top: 0.3mm !important;
+      font-size: 0.72em !important;
+      margin-top: 0.2mm !important;
+      line-height: 1.15 !important;
+    }
+    
+    .no-delivery {
+      margin: 1mm 0 !important;
+      font-size: 0.85em !important;
     }
   }
 
-  .paper-content *{ font-size: 8.5pt; line-height: 1.1; }
+  .paper-content *{ font-size: 7.5pt; line-height: 1.05; }
 
   /* === HEADER SECTION === */
   .header-section {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1.5mm;
-    padding-bottom: 1mm;
+    margin-bottom: 1mm;
+    padding-bottom: 0.5mm;
   }
 
   .header-left {
@@ -430,12 +438,12 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .logo {
-    height: 12mm;
-    margin-bottom: 0.5mm;
+    height: 10mm;
+    margin-bottom: 0.3mm;
   }
 
   .logo-subtitle {
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: #5f6368;
     font-weight: 500;
   }
@@ -447,10 +455,10 @@ HTML_TEMPLATE = """<!doctype html>
   .customer-box {
     background: #f8f9fa;
     border: 1px solid #dadce0;
-    border-radius: 4px;
-    padding: 1.5mm 2.5mm;
-    font-size: 0.85em;
-    line-height: 1.4;
+    border-radius: 3px;
+    padding: 1mm 2mm;
+    font-size: 0.8em;
+    line-height: 1.3;
   }
 
   .customer-box strong {
@@ -461,60 +469,60 @@ HTML_TEMPLATE = """<!doctype html>
   /* === TITLE SECTION === */
   .title-section {
     text-align: center;
-    margin-bottom: 1.5mm;
+    margin-bottom: 1mm;
   }
 
   .main-title {
-    font-size: 1.6em;
+    font-size: 1.4em;
     font-weight: 900;
     color: #1e3a5f;
-    margin: 0 0 0.5mm 0;
+    margin: 0 0 0.3mm 0;
   }
 
   .plan-type {
-    font-size: 1.1em;
+    font-size: 1em;
     color: #f39c12;
     font-weight: 800;
-    margin: 0.3mm 0;
+    margin: 0.2mm 0;
   }
 
   .customer-subtitle {
-    font-size: 0.95em;
+    font-size: 0.85em;
     color: #2c3e50;
     font-weight: 600;
-    margin-top: 0.5mm;
+    margin-top: 0.3mm;
   }
 
   /* === ADDRESS BOX === */
   .address-box {
     background: #ffffff;
     border: 1px solid #dadce0;
-    border-radius: 4px;
-    padding: 1.5mm 2.5mm;
-    margin-bottom: 1.5mm;
-    font-size: 0.85em;
-    line-height: 1.3;
+    border-radius: 3px;
+    padding: 1mm 2mm;
+    margin-bottom: 1mm;
+    font-size: 0.8em;
+    line-height: 1.2;
     color: #2c3e50;
   }
 
   /* === TOUR SECTION === */
   .tour-section {
-    margin-bottom: 1.5mm;
+    margin-bottom: 1mm;
   }
 
   .tour-table {
     width: 100%;
     border-collapse: collapse;
     background: #f8f9fa;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
   }
 
   .tour-table th {
     background: #1e3a5f;
     color: white;
-    padding: 1.2mm 0.5mm;
-    font-size: 0.68em;
+    padding: 0.8mm 0.3mm;
+    font-size: 0.65em;
     font-weight: 700;
     text-align: center;
     border-right: 1px solid rgba(255,255,255,0.2);
@@ -525,10 +533,10 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .tour-table td {
-    padding: 1.2mm 0.5mm;
+    padding: 0.8mm 0.3mm;
     text-align: center;
     font-weight: 700;
-    font-size: 0.8em;
+    font-size: 0.75em;
     border-right: 1px solid #dadce0;
     color: #2c3e50;
   }
@@ -541,23 +549,23 @@ HTML_TEMPLATE = """<!doctype html>
   .days-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 2mm;
-    margin-top: 1mm;
+    gap: 1.5mm;
+    margin-top: 0.8mm;
   }
 
   .day-card {
     background: white;
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 0.5px 1px rgba(0,0,0,0.1);
     page-break-inside: avoid;
     border: 1px solid #e0e0e0;
   }
 
   .day-card-header {
-    padding: 1.5mm 2mm;
+    padding: 1mm 1.5mm;
     font-weight: 700;
-    font-size: 1em;
+    font-size: 0.95em;
     color: white;
   }
 
@@ -570,13 +578,13 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-body {
-    padding: 2mm;
+    padding: 1.5mm;
     background: white;
-    min-height: 12mm;
+    min-height: 10mm;
   }
 
   .sortiment-item {
-    padding: 1.5mm 0;
+    padding: 1mm 0;
     border-bottom: 1px solid #f0f0f0;
   }
 
@@ -585,18 +593,18 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .sortiment-name {
-    font-size: 0.88em;
+    font-size: 0.85em;
     font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 0.5mm;
-    line-height: 1.2;
+    margin-bottom: 0.3mm;
+    line-height: 1.15;
   }
 
   .sortiment-detail {
-    font-size: 0.78em;
+    font-size: 0.72em;
     color: #5f6368;
-    line-height: 1.2;
-    margin-top: 0.3mm;
+    line-height: 1.15;
+    margin-top: 0.2mm;
   }
 
   .sortiment-detail .label {
@@ -647,8 +655,8 @@ HTML_TEMPLATE = """<!doctype html>
     text-align: center;
     color: #9aa0a6;
     font-style: italic;
-    margin: 1.5mm 0;
-    font-size: 0.9em;
+    margin: 1mm 0;
+    font-size: 0.85em;
   }
 
   .area-buttons {
