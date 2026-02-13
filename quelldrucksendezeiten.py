@@ -302,7 +302,7 @@ HTML_TEMPLATE = """<!doctype html>
     .paper-content{
       width: 100%;
       height: 100%;
-      padding: 10mm 8mm;
+      padding: 12mm 10mm;
       overflow-y: auto;
       overflow-x: hidden;
     }
