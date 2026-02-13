@@ -2,6 +2,9 @@
 # -----------------------------------------------------------------------------
 # VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
 # + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
+# + FIX: JS-Syntaxfehler (überflüssige "}" in render()) entfernt
+# + CHANGE: In den Tageskarten werden JE Sortiment die einzelnen Bestellzeiten
+#          (Bestelltag + Bestellschluss) ausgegeben (keine Zusammenfassung per Set)
 # -----------------------------------------------------------------------------
 
 import json
@@ -261,7 +264,8 @@ def logo_file_to_data_uri(uploaded_file) -> str:
     """
     if not uploaded_file:
         return ""
-    mime = uploaded_file.type or "image/png"
+    # robustere MIME-Erkennung (z.B. SVG)
+    mime = uploaded_file.type or ("image/svg+xml" if str(uploaded_file.name).lower().endswith(".svg") else "image/png")
     b = uploaded_file.getvalue()
     return f"data:{mime};base64," + base64.b64encode(b).decode("ascii")
 
@@ -353,6 +357,7 @@ HTML_TEMPLATE = """<!doctype html>
       color-adjust: exact !important;
     }
 
+    img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     table, th, td { border-color: transparent !important; }
     
     .paper-content * { font-size: 8.5pt !important; line-height: 1.15 !important; }
@@ -394,6 +399,8 @@ HTML_TEMPLATE = """<!doctype html>
       font-size: 0.9em !important;
       padding: 1mm 0 !important;
     }
+
+    .li-sub { font-size: 0.82em !important; }
     
     .sortiment-list li:before {
       color: #1e73e8 !important;
@@ -588,6 +595,18 @@ HTML_TEMPLATE = """<!doctype html>
     font-weight: bold;
   }
 
+  .li-main{
+    display:block;
+    font-weight:700;
+  }
+
+  .li-sub{
+    display:block;
+    font-size:0.85em;
+    color:#5f6368;
+    margin-top:0.5mm;
+  }
+
   .card-info {
     padding: 1mm 0;
     font-size: 0.85em;
@@ -687,17 +706,13 @@ let DATA = ALL_DATA['direkt'] || {};
 let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
-// Debug: Zeige Daten-Status in Console
-console.log("=== INIT DEBUG ===");
-console.log("ALL_DATA type:", typeof ALL_DATA);
-console.log("ALL_DATA keys:", Object.keys(ALL_DATA || {}));
-console.log("Direkt keys count:", Object.keys(DATA).length);
-console.log("ORDER length:", ORDER.length);
-console.log("First 5 customer numbers:", ORDER.slice(0, 5));
+// Debug: Zeige Daten-Status
+console.log("ALL_DATA:", ALL_DATA);
+console.log("Anzahl Bereiche:", Object.keys(ALL_DATA || {}).length);
+console.log("Direkt Kunden:", Object.keys(DATA).length);
 
 // Zeige Hinweis wenn keine Daten
-if (!ALL_DATA || Object.keys(ALL_DATA).length === 0) {
-  console.error("FEHLER: ALL_DATA ist leer!");
+if (Object.keys(ALL_DATA || {}).length === 0) {
   document.getElementById("out").innerHTML = `
     <div style="color:#ea4335; padding:40px; text-align:center; font-size:16px;">
       <h2>⚠️ Keine Daten gefunden!</h2>
@@ -712,17 +727,6 @@ if (!ALL_DATA || Object.keys(ALL_DATA).length === 0) {
       </ol>
     </div>
   `;
-} else if (Object.keys(DATA).length === 0) {
-  console.error("FEHLER: DATA für Bereich 'direkt' ist leer!");
-  document.getElementById("out").innerHTML = `
-    <div style="color:#f39c12; padding:40px; text-align:center; font-size:16px;">
-      <h2>⚠️ Keine Kunden im Bereich "Direkt"</h2>
-      <p>Verfügbare Bereiche: ${Object.keys(ALL_DATA).join(", ")}</p>
-      <p>Wählen Sie einen anderen Bereich.</p>
-    </div>
-  `;
-} else {
-  console.log("✓ Daten erfolgreich geladen!");
 }
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
@@ -734,29 +738,22 @@ function render(c){
     const items = (c.bestell || []).filter(it => it.liefertag === d);
     
     if (items.length > 0) {
-      // Tag hat Lieferungen - blaue Karte
-      const sortimente = items.map(it => `<li>${esc(it.sortiment)}</li>`).join("");
-      
-      // Sammle alle einzigartigen Bestelltage und -zeiten
-      const bestelltage = [...new Set(items.map(it => it.bestelltag).filter(t => t))];
-      const bestellzeiten = [...new Set(items.map(it => it.bestellschluss).filter(t => t))];
-      
-      let orderInfo = "";
-      if (bestelltage.length > 0) {
-        const tageText = bestelltage.join(", ");
-        orderInfo += `<div class="card-info"><span class="info-label">Bestelltag:</span> <span class="info-value">${esc(tageText)}</span></div>`;
-      }
-      if (bestellzeiten.length > 0) {
-        const zeitenText = bestellzeiten.join(", ");
-        orderInfo += `<div class="card-info"><span class="info-label">Bestellschluss:</span> <span class="info-value">${esc(zeitenText)}</span></div>`;
-      }
-      
+      // JE Sortiment als eigene Zeile inkl. Bestelltag + Bestellschluss
+      const lines = items.map(it => {
+        const s = esc(it.sortiment || "—");
+        const bt = esc(it.bestelltag || "—");
+        const bz = esc(it.bestellschluss || "—");
+        return `<li>
+                  <span class="li-main">${s}</span>
+                  <span class="li-sub">Bestelltag: ${bt} • Schluss: ${bz}</span>
+                </li>`;
+      }).join("");
+
       dayCards += `
         <div class="day-card active">
           <div class="day-card-header">${d}</div>
           <div class="day-card-body">
-            <ul class="sortiment-list">${sortimente}</ul>
-            ${orderInfo}
+            <ul class="sortiment-list">${lines}</ul>
           </div>
         </div>`;
     } else {
@@ -773,7 +770,7 @@ function render(c){
 
   // Tour-Informationen aufbereiten
   const tourItems = DAYS.map(d => {
-    const tourNr = c.tours[d] || "—";
+    const tourNr = (c.tours && c.tours[d]) ? c.tours[d] : "—";
     return `<td>${esc(tourNr)}</td>`;
   }).join("");
   
@@ -829,9 +826,8 @@ function render(c){
 }
 
 function findCustomerInAllAreas(knr){
-  // Durchsuche alle Bereiche nach der Kundennummer
   for(let area in ALL_DATA){
-    if(ALL_DATA[area][knr]){
+    if(ALL_DATA[area] && ALL_DATA[area][knr]){
       return area;
     }
   }
@@ -846,21 +842,16 @@ function showOne(){
     return;
   }
   
-  // Prüfe zuerst im aktuellen Bereich
-  if(DATA[k]){
+  if(DATA && DATA[k]){
     document.getElementById("out").innerHTML = render(DATA[k]);
     return;
   }
   
-  // Suche in allen Bereichen
   const foundArea = findCustomerInAllAreas(k);
-  
   if(foundArea){
-    // Automatisch zum richtigen Bereich wechseln (Input beibehalten)
     if(foundArea !== currentArea){
       switchArea(foundArea, true);
     }
-    // Kunde anzeigen
     document.getElementById("out").innerHTML = render(ALL_DATA[foundArea][k]);
   } else {
     document.getElementById("out").innerHTML = `<div style="color:#f28b82; padding:20px; font-weight:600; text-align:center;">⚠️ Kunde ${k} nicht gefunden.</div>`;
@@ -873,7 +864,8 @@ function switchArea(area, preserveInput = false){
   ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 
   document.querySelectorAll('.area-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(`btn-${area}`).classList.add('active');
+  const b = document.getElementById(`btn-${area}`);
+  if (b) b.classList.add('active');
 
   updateList();
   
@@ -889,17 +881,8 @@ function getAreaName(area){
 }
 
 function updateList(){
-  console.log("=== updateList() aufgerufen ===");
-  console.log("DATA:", DATA);
-  console.log("ORDER:", ORDER);
-  console.log("ORDER.length:", ORDER.length);
-  
-  const listDiv = document.getElementById("list");
-  console.log("list div gefunden:", !!listDiv);
-  
   if (!DATA || Object.keys(DATA).length === 0) {
-    console.warn("Keine Kunden im aktuellen Bereich");
-    listDiv.innerHTML = `
+    document.getElementById("list").innerHTML = `
       <div style="padding:20px; text-align:center; color:#9aa0a6; font-size:13px;">
         <p>Keine Kunden im aktuellen Bereich</p>
       </div>
@@ -907,30 +890,13 @@ function updateList(){
     return;
   }
   
-  console.log("Erstelle HTML für", ORDER.length, "Kunden...");
-  
-  try {
-    const html = ORDER.map((k, idx) => {
-      const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
-      if (idx < 3) {
-        console.log(`Kunde ${idx}: ${k} - ${name}`);
-      }
-      return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
-    }).join("");
-    
-    console.log("HTML erstellt, Länge:", html.length);
-    console.log("Erste 200 Zeichen:", html.substring(0, 200));
-    
-    listDiv.innerHTML = html;
-    console.log("Liste aktualisiert!");
-  } catch(err) {
-    console.error("FEHLER in updateList:", err);
-    listDiv.innerHTML = `<div style="padding:20px; color:red;">Fehler: ${err.message}</div>`;
-  }
+  document.getElementById("list").innerHTML = ORDER.map(k => {
+    const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
+    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
+  }).join("");
 }
 
 function printAll(){
-  // Dialog erstellen für Liefertag-Auswahl
   const dialogHtml = `
     <div id="printDialog" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999;">
       <div style="background:#2d2d2d; padding:30px; border-radius:12px; max-width:500px; width:90%; border:1px solid #3c3c3c;">
@@ -963,32 +929,23 @@ function printByDeliveryDay(day){
   closePrintDialog();
   
   const areaName = getAreaName(currentArea);
-  
-  // Kunden filtern und sortieren
   let customersToPrint = [];
   
   if(day === 'ALLE'){
-    // Alle Kunden in ursprünglicher Reihenfolge
     customersToPrint = ORDER.map(k => ({key: k, data: DATA[k]})).filter(c => c.data);
   } else {
-    // Nur Kunden die an diesem Tag beliefert werden
     ORDER.forEach(k => {
       if(DATA[k] && DATA[k].tours && DATA[k].tours[day]){
         const tourNr = DATA[k].tours[day];
-        if(tourNr && tourNr !== "—" && tourNr.trim() !== ""){
-          customersToPrint.push({
-            key: k,
-            data: DATA[k],
-            tour: tourNr
-          });
+        if(tourNr && tourNr !== "—" && String(tourNr).trim() !== ""){
+          customersToPrint.push({ key: k, data: DATA[k], tour: tourNr });
         }
       }
     });
-    
-    // Nach Tournummer sortieren
+
     customersToPrint.sort((a, b) => {
-      const tourA = String(a.tour).replace(/\D/g, '');
-      const tourB = String(b.tour).replace(/\D/g, '');
+      const tourA = String(a.tour).replace(/\\D/g, '');
+      const tourB = String(b.tour).replace(/\\D/g, '');
       return (Number(tourA) || 0) - (Number(tourB) || 0);
     });
   }
@@ -1004,7 +961,6 @@ function printByDeliveryDay(day){
     
   if(!confirm(message)) return;
   
-  // HTML generieren
   let html = "";
   customersToPrint.forEach(c => {
     html += render(c.data);
@@ -1014,11 +970,7 @@ function printByDeliveryDay(day){
   setTimeout(() => window.print(), 500);
 }
 
-console.log("=== Script Ende - Rufe updateList() auf ===");
-console.log("Aktueller Bereich:", currentArea);
-console.log("DATA keys:", Object.keys(DATA).length);
 updateList();
-console.log("=== updateList() Aufruf abgeschlossen ===");
 </script>
 </body>
 </html>
@@ -1158,7 +1110,7 @@ if up:
     st.write("**Debug-Info:**")
     st.write(f"- all_data Keys: {list(all_data.keys())}")
     st.write(f"- Direkt Kunden-Anzahl: {len(all_data.get('direkt', {}))}")
-    
+
     # Erstelle JSON
     try:
         json_data = json.dumps(all_data, ensure_ascii=False, separators=(",", ":"))
@@ -1167,14 +1119,14 @@ if up:
     except Exception as e:
         st.error(f"Fehler beim JSON-Erstellen: {e}")
         json_data = "{}"
-    
+
     # Erstelle HTML
     html = HTML_TEMPLATE.replace(
         "__DATA_JSON__", json_data
     ).replace(
         "__LOGO_DATAURI__", logo_preview_uri or ""
     )
-    
+
     st.write(f"- HTML Größe: {len(html)} Zeichen")
 
     st.write("---")
