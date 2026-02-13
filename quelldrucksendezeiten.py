@@ -277,14 +277,14 @@ HTML_TEMPLATE = """<!doctype html>
     margin: 10mm 8mm;
   }
 
-  *{ box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; }
-  body{ margin:0; background:#0b1220; color:#fff; }
+  *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body{ margin:0; background:#f5f7fa; color:#2c3e50; }
 
   @media screen {
     .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
-    .sidebar, .main{ background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:12px; }
-    .list{ height: calc(100vh - 380px); overflow-y:auto; border-top:1px solid rgba(255,255,255,.14); margin-top:10px; }
-    .item{ padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; }
+    .sidebar, .main{ background: #ffffff; border:1px solid #e1e8ed; border-radius:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .list{ height: calc(100vh - 380px); overflow-y:auto; border-top:1px solid #e1e8ed; margin-top:10px; }
+    .item{ padding:10px; border-bottom:1px solid #f0f3f5; cursor:pointer; font-size:13px; color:#2c3e50; transition: background 0.2s; }
     .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
     .paper{
@@ -311,6 +311,11 @@ HTML_TEMPLATE = """<!doctype html>
     .paper-content::-webkit-scrollbar-track { background: #f1f1f1; }
     .paper-content::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
     .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
+    
+    .list::-webkit-scrollbar { width: 8px; }
+    .list::-webkit-scrollbar-track { background: #f8f9fa; }
+    .list::-webkit-scrollbar-thumb { background: #d1d9e0; border-radius: 4px; }
+    .list::-webkit-scrollbar-thumb:hover { background: #2c5aa0; }
   }
 
   @media print {
@@ -401,14 +406,14 @@ HTML_TEMPLATE = """<!doctype html>
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 15px;
-    border-bottom: 1px solid rgba(255,255,255,.14);
+    border-bottom: 1px solid #e1e8ed;
   }
 
   .area-btn {
     padding: 12px;
-    border: 2px solid rgba(255,255,255,.2);
-    background: rgba(255,255,255,.05);
-    color: #fff;
+    border: 2px solid #d1d9e0;
+    background: #f8f9fa;
+    color: #495057;
     cursor: pointer;
     border-radius: 8px;
     font-weight: 600;
@@ -417,13 +422,19 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .area-btn:hover {
-    background: rgba(255,255,255,.12);
-    border-color: rgba(255,255,255,.4);
+    background: #e9ecef;
+    border-color: #2c5aa0;
+    color: #2c5aa0;
   }
 
   .area-btn.active {
-    background: #4fa3ff;
-    border-color: #4fa3ff;
+    background: #2c5aa0;
+    border-color: #2c5aa0;
+    color: #ffffff;
+  }
+
+  .item:hover {
+    background: #f0f4f8;
   }
 
   @media print {
@@ -434,7 +445,7 @@ HTML_TEMPLATE = """<!doctype html>
 <body>
 <div class="app">
   <div class="sidebar">
-    <div style="padding:15px; font-weight:bold; font-size:16px;">Sendeplan Generator</div>
+    <div style="padding:15px; font-weight:bold; font-size:18px; color:#2c5aa0; border-bottom:2px solid #e1e8ed; background:#f8f9fa;">Sendeplan Generator</div>
 
     <div class="area-buttons">
       <div class="area-btn active" id="btn-direkt" onclick="switchArea('direkt')">Direkt</div>
@@ -444,16 +455,16 @@ HTML_TEMPLATE = """<!doctype html>
     </div>
 
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
-      <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:5px;">
-      <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; border-radius:5px;">Anzeigen</button>
-      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer; border-radius:5px;">Drucken</button>
-      <button onclick="printAll()" style="padding:10px; background:#ff6b35; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:5px;">Alle drucken</button>
+      <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:6px; border:2px solid #d1d9e0; font-size:14px; color:#2c3e50;">
+      <button onclick="showOne()" style="padding:10px; background:#2c5aa0; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#1e3a70'" onmouseout="this.style.background='#2c5aa0'">Anzeigen</button>
+      <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">Drucken</button>
+      <button onclick="printAll()" style="padding:10px; background:#dc3545; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:6px; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">Alle drucken</button>
     </div>
     <div class="list" id="list"></div>
   </div>
 
   <div class="main">
-    <div class="wrap" id="out">Bitte Bereich und Kunden wählen...</div>
+    <div class="wrap" id="out"><div style="color:#2c5aa0; padding:20px; font-weight:600; text-align:center;">📋 Bitte Bereich und Kunden wählen...</div></div>
   </div>
 </div>
 
@@ -530,7 +541,7 @@ function showOne(){
   const k = document.getElementById("knr").value.trim();
   
   if(!k){
-    document.getElementById("out").innerHTML = "Bitte Kundennummer eingeben...";
+    document.getElementById("out").innerHTML = "<div style='color:#6c757d; padding:20px; font-weight:500; text-align:center;'>💼 Bitte Kundennummer eingeben...</div>";
     return;
   }
   
@@ -551,7 +562,7 @@ function showOne(){
     // Kunde anzeigen
     document.getElementById("out").innerHTML = render(ALL_DATA[foundArea][k]);
   } else {
-    document.getElementById("out").innerHTML = `<div style="color:red">Kunde ${k} nicht gefunden.</div>`;
+    document.getElementById("out").innerHTML = `<div style="color:#dc3545; padding:20px; font-weight:600; text-align:center;">⚠️ Kunde ${k} nicht gefunden.</div>`;
   }
 }
 
@@ -567,7 +578,7 @@ function switchArea(area, preserveInput = false){
   
   if(!preserveInput){
     document.getElementById("knr").value = "";
-    document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
+    document.getElementById("out").innerHTML = `<div style="color:#2c5aa0; padding:20px; font-weight:600; text-align:center;">📋 Bereich gewechselt zu: ${getAreaName(area)}<br><br>Bitte Kunden wählen...</div>`;
   }
 }
 
@@ -579,7 +590,7 @@ function getAreaName(area){
 function updateList(){
   document.getElementById("list").innerHTML = ORDER.map(k => {
     const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
-    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b>${k}</b> - ${esc(name)}</div>`;
+    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#2c5aa0">${k}</b> <span style="color:#6c757d">—</span> ${esc(name)}</div>`;
   }).join("");
 }
 
