@@ -274,7 +274,7 @@ HTML_TEMPLATE = """<!doctype html>
 <style>
   @page { 
     size: A4 portrait; 
-    margin: 5mm 4mm;
+    margin: 4mm 4mm;
   }
 
   *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -357,8 +357,8 @@ HTML_TEMPLATE = """<!doctype html>
     .day-header { 
       background: #e8eaed !important; 
       color: #2c3e50 !important; 
-      font-size:1.05em !important;
-      padding:4px 3px !important;
+      font-size:1.02em !important;
+      padding:3px 2px !important;
     }
     .day-header td {
       border-top: 2px solid #5f6368 !important;
@@ -380,49 +380,49 @@ HTML_TEMPLATE = """<!doctype html>
     .main-table tbody tr { background: #ffffff !important; }
     .pstd { color: #d0192b !important; }
     .ptitle { color: #2c3e50 !important; }
-    .head-box { border-bottom-color: #5f6368 !important; font-size:11pt !important; line-height:1.4 !important; }
+    .head-box { border-bottom-color: #5f6368 !important; font-size:10pt !important; line-height:1.3 !important; }
   }
 
-  .paper-content *{ font-size: 9pt; line-height: 1.0; }
+  .paper-content *{ font-size: 8.5pt; line-height: 0.95; }
 
   /* === LOGO === */
   .logo-wrap{
     width: 100%;
     text-align: center;
-    margin: 0 0 1.2mm 0;
+    margin: 0 0 0.8mm 0;
   }
   .logo{
-    height: 14mm;
+    height: 12mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.45em; margin:0 0 0.8mm 0; color:#2c3e50; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
-  .psub{ text-align:center; color:#5f6368; margin: 0 0 1.5mm 0; font-weight:600; font-size:1em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.35em; margin:0 0 0.5mm 0; color:#2c3e50; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.3mm 0; font-size:1.05em; }
+  .psub{ text-align:center; color:#5f6368; margin: 0 0 1mm 0; font-weight:600; font-size:0.95em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:5mm;
-    margin-bottom:2mm;
+    gap:4mm;
+    margin-bottom:1.5mm;
     border-bottom:2px solid #5f6368;
-    padding-bottom:2mm;
-    font-size:11pt;
-    line-height:1.4;
+    padding-bottom:1.5mm;
+    font-size:10pt;
+    line-height:1.3;
     font-weight:600;
   }
 
-  .tour-info { margin-bottom:0.8mm; }
+  .tour-info { margin-bottom:0.6mm; }
 
   .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#fafafa; }
-  .tour-table th { background:#e8eaed; font-size:0.7em; padding:1px 1px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
-  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:2px 1px; text-align:center; font-weight:700; font-size:0.8em; }
+  .tour-table th { background:#e8eaed; font-size:0.68em; padding:1px 0px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
+  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:1.5px 0px; text-align:center; font-weight:700; font-size:0.78em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:1mm; }
-  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:3px 3px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.85em; color:#3c4043; }
-  table.main-table td { border:none; padding:3px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.1; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:0.8mm; }
+  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:2px 2px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.82em; color:#3c4043; }
+  table.main-table td { border:none; padding:2px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; line-height:1.05; }
   
   table.main-table tbody tr { background:#ffffff; }
 
@@ -430,8 +430,8 @@ HTML_TEMPLATE = """<!doctype html>
     background:#e8eaed !important; 
     font-weight:900 !important; 
     color:#2c3e50 !important;
-    font-size:1.05em !important;
-    padding:4px 3px !important;
+    font-size:1.02em !important;
+    padding:3px 2px !important;
   }
   
   /* Rahmen um jeden Tag-Block */
