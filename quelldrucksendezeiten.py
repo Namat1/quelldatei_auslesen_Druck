@@ -417,8 +417,9 @@ HTML_TEMPLATE = """<!doctype html>
     }
     
     .day-card-header { 
-      padding: 0.7mm 1.5mm !important; 
-      font-size: 0.85em !important; 
+      padding: 1mm 1.5mm !important; 
+      font-size: 1.05em !important;
+      font-weight: 700 !important;
     }
     
     .day-card.active .day-card-header { 
@@ -446,17 +447,18 @@ HTML_TEMPLATE = """<!doctype html>
     }
     
     .sortiment-name {
-      font-size: 0.75em !important;
+      font-size: 0.72em !important;
       font-weight: 700 !important;
       color: #d0192b !important;
-      margin-bottom: 0.15mm !important;
+      margin-bottom: 0.2mm !important;
       line-height: 1.0 !important;
     }
     
     .sortiment-detail {
-      font-size: 0.65em !important;
-      margin-top: 0.1mm !important;
-      line-height: 1.0 !important;
+      font-size: 0.75em !important;
+      font-weight: 600 !important;
+      margin-top: 0.15mm !important;
+      line-height: 1.05 !important;
     }
     
     .no-delivery {
@@ -610,9 +612,9 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-header {
-    padding: 0.7mm 1.5mm;
+    padding: 1mm 1.5mm;
     font-weight: 700;
-    font-size: 0.85em;
+    font-size: 1.05em;
     color: white;
     display: flex;
     align-items: center;
@@ -647,18 +649,19 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .sortiment-name {
-    font-size: 0.75em;
+    font-size: 0.72em;
     font-weight: 700;
     color: #d0192b;
-    margin-bottom: 0.15mm;
+    margin-bottom: 0.2mm;
     line-height: 1.0;
   }
 
   .sortiment-detail {
-    font-size: 0.65em;
+    font-size: 0.75em;
     color: #5f6368;
-    line-height: 1.0;
-    margin-top: 0.1mm;
+    line-height: 1.05;
+    margin-top: 0.15mm;
+    font-weight: 600;
   }
 
   .sortiment-detail .label {
