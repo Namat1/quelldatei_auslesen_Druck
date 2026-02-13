@@ -444,7 +444,7 @@ HTML_TEMPLATE = """<!doctype html>
     </div>
 
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
-      <input id="knr" placeholder="Kunden-Nr..." style="width:100%; padding:10px; border-radius:5px;">
+      <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:5px;">
       <button onclick="showOne()" style="padding:10px; background:#4fa3ff; color:white; border:none; cursor:pointer; border-radius:5px;">Anzeigen</button>
       <button onclick="window.print()" style="padding:10px; background:#28a745; color:white; border:none; cursor:pointer; border-radius:5px;">Drucken</button>
       <button onclick="printAll()" style="padding:10px; background:#ff6b35; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:5px;">Alle drucken</button>
@@ -516,12 +516,46 @@ function render(c){
   </div>`;
 }
 
-function showOne(){
-  const k = document.getElementById("knr").value.trim();
-  if(DATA[k]) document.getElementById("out").innerHTML = render(DATA[k]);
+function findCustomerInAllAreas(knr){
+  // Durchsuche alle Bereiche nach der Kundennummer
+  for(let area in ALL_DATA){
+    if(ALL_DATA[area][knr]){
+      return area;
+    }
+  }
+  return null;
 }
 
-function switchArea(area){
+function showOne(){
+  const k = document.getElementById("knr").value.trim();
+  
+  if(!k){
+    document.getElementById("out").innerHTML = "Bitte Kundennummer eingeben...";
+    return;
+  }
+  
+  // Prüfe zuerst im aktuellen Bereich
+  if(DATA[k]){
+    document.getElementById("out").innerHTML = render(DATA[k]);
+    return;
+  }
+  
+  // Suche in allen Bereichen
+  const foundArea = findCustomerInAllAreas(k);
+  
+  if(foundArea){
+    // Automatisch zum richtigen Bereich wechseln (Input beibehalten)
+    if(foundArea !== currentArea){
+      switchArea(foundArea, true);
+    }
+    // Kunde anzeigen
+    document.getElementById("out").innerHTML = render(ALL_DATA[foundArea][k]);
+  } else {
+    document.getElementById("out").innerHTML = `<div style="color:red">Kunde ${k} nicht gefunden.</div>`;
+  }
+}
+
+function switchArea(area, preserveInput = false){
   currentArea = area;
   DATA = ALL_DATA[area] || {};
   ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
@@ -530,8 +564,11 @@ function switchArea(area){
   document.getElementById(`btn-${area}`).classList.add('active');
 
   updateList();
-  document.getElementById("knr").value = "";
-  document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
+  
+  if(!preserveInput){
+    document.getElementById("knr").value = "";
+    document.getElementById("out").innerHTML = `Bereich gewechselt zu: ${getAreaName(area)}<br>Bitte Kunden wählen...`;
+  }
 }
 
 function getAreaName(area){
