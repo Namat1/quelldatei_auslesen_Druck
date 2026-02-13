@@ -1106,4 +1106,3 @@ if up:
         file_name="sendeplan_4_bereiche.html",
         mime="text/html"
     )
-```
