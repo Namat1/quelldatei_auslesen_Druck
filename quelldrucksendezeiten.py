@@ -357,7 +357,7 @@ HTML_TEMPLATE = """<!doctype html>
     .day-header { background: #e8f0fe !important; color: #1a73e8 !important; border-top:2px solid #1a73e8 !important; }
     .tour-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
     .main-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
-    .main-table tbody tr:nth-child(odd) { background: #fafbfc !important; }
+    .main-table tbody tr:nth-child(odd) { background: #fafafa !important; }
     .main-table tbody tr:nth-child(even) { background: #ffffff !important; }
     .pstd { color: #d0192b !important; }
     .ptitle { color: #1a73e8 !important; }
@@ -373,7 +373,7 @@ HTML_TEMPLATE = """<!doctype html>
     margin: 0 0 0.8mm 0;
   }
   .logo{
-    height: 11mm;
+    height: 10mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
@@ -396,7 +396,7 @@ HTML_TEMPLATE = """<!doctype html>
 
   .tour-info { margin-bottom:0.8mm; }
 
-  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#f8f9fa; }
+  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#fafafa; }
   .tour-table th { background:#e8f0fe; font-size:0.7em; padding:1px 1px; border:none; border-bottom:2px solid #1a73e8; font-weight:700; color:#1a73e8; }
   .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:2px 1px; text-align:center; font-weight:700; font-size:0.8em; }
 
