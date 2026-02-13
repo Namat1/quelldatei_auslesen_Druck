@@ -274,7 +274,7 @@ HTML_TEMPLATE = """<!doctype html>
 <style>
   @page { 
     size: A4 portrait; 
-    margin: 10mm 8mm;
+    margin: 8mm 7mm;
   }
 
   *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -360,44 +360,44 @@ HTML_TEMPLATE = """<!doctype html>
     .pstd { color: #d0192b !important; }
   }
 
-  .paper-content *{ font-size: 9pt; line-height: 1.15; }
+  .paper-content *{ font-size: 7.5pt; line-height: 1.1; }
 
   /* === LOGO === */
   .logo-wrap{
     width: 100%;
     text-align: center;
-    margin: 0 0 2.5mm 0;
+    margin: 0 0 1.5mm 0;
   }
   .logo{
-    height: 18mm;
+    height: 12mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
-  .psub{ text-align:center; color:#333; margin: 0 0 2mm 0; font-weight:700; font-size:0.95em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.4em; margin:0 0 0.5mm 0; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.3mm 0; font-size:1.1em; }
+  .psub{ text-align:center; color:#333; margin: 0 0 1.5mm 0; font-weight:700; font-size:0.9em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:5mm;
-    margin-bottom:2mm;
+    gap:4mm;
+    margin-bottom:1.5mm;
     border-bottom:1.5px solid #000;
-    padding-bottom:1.5mm;
-    font-size:8.5pt;
+    padding-bottom:1mm;
+    font-size:7.5pt;
   }
 
-  .tour-info { margin-bottom:2mm; }
+  .tour-info { margin-bottom:1.5mm; }
 
   .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  .tour-table th { background:#eee; font-size:0.8em; padding:2px 1px; border:1px solid #000; font-weight:700; }
-  .tour-table td { border:1px solid #000; padding:3px 1px; text-align:center; font-weight:800; font-size:0.9em; }
+  .tour-table th { background:#eee; font-size:0.75em; padding:1.5px 1px; border:1px solid #000; font-weight:700; }
+  .tour-table td { border:1px solid #000; padding:2px 1px; text-align:center; font-weight:800; font-size:0.85em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:2mm; }
-  table.main-table th { border:1px solid #000; padding:3px 4px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.85em; }
-  table.main-table td { border:1px solid #000; padding:3px 4px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.88em; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:1.5mm; }
+  table.main-table th { border:1px solid #000; padding:2px 3px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.8em; }
+  table.main-table td { border:1px solid #000; padding:2px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.85em; line-height:1.1; }
 
   .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
 
