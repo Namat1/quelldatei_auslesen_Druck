@@ -355,20 +355,28 @@ HTML_TEMPLATE = """<!doctype html>
 
     table, th, td { border-color: transparent !important; }
     
+    .paper-content * { font-size: 8.5pt !important; line-height: 1.15 !important; }
+    
     .header-section { display: flex !important; justify-content: space-between !important; }
-    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; }
-    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; }
+    .logo { height: 14mm !important; }
+    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; padding: 2mm 3mm !important; }
+    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; padding: 2mm 3mm !important; }
     
-    .main-title { color: #1e3a5f !important; }
-    .plan-type { color: #f39c12 !important; }
+    .main-title { color: #1e3a5f !important; font-size: 1.8em !important; }
+    .plan-type { color: #f39c12 !important; font-size: 1.2em !important; }
     
-    .tour-table th { background: #1e3a5f !important; color: white !important; }
-    .tour-table td { border-right: 1px solid #dadce0 !important; }
+    .tour-table th { background: #1e3a5f !important; color: white !important; padding: 1.5mm 0.5mm !important; }
+    .tour-table td { border-right: 1px solid #dadce0 !important; padding: 1.5mm 0.5mm !important; }
+    
+    .days-grid { gap: 2.5mm !important; }
     
     .day-card { 
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
       page-break-inside: avoid !important;
+      border: 1px solid #e0e0e0 !important;
     }
+    
+    .day-card-header { padding: 2mm 2.5mm !important; }
     
     .day-card.active .day-card-header { 
       background: #1e73e8 !important; 
@@ -380,20 +388,29 @@ HTML_TEMPLATE = """<!doctype html>
       color: white !important;
     }
     
+    .day-card-body { padding: 2.5mm !important; }
+    
+    .sortiment-list li {
+      font-size: 0.9em !important;
+      padding: 1mm 0 !important;
+    }
+    
     .sortiment-list li:before {
       color: #1e73e8 !important;
     }
+    
+    .card-info { font-size: 0.85em !important; }
   }
 
-  .paper-content *{ font-size: 9.5pt; line-height: 1.2; }
+  .paper-content *{ font-size: 8.5pt; line-height: 1.15; }
 
   /* === HEADER SECTION === */
   .header-section {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 3mm;
-    padding-bottom: 2mm;
+    margin-bottom: 2mm;
+    padding-bottom: 1.5mm;
   }
 
   .header-left {
@@ -403,12 +420,12 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .logo {
-    height: 16mm;
-    margin-bottom: 1mm;
+    height: 14mm;
+    margin-bottom: 0.5mm;
   }
 
   .logo-subtitle {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #5f6368;
     font-weight: 500;
   }
@@ -421,9 +438,9 @@ HTML_TEMPLATE = """<!doctype html>
     background: #f8f9fa;
     border: 1px solid #dadce0;
     border-radius: 4px;
-    padding: 3mm 4mm;
-    font-size: 0.95em;
-    line-height: 1.6;
+    padding: 2mm 3mm;
+    font-size: 0.9em;
+    line-height: 1.5;
   }
 
   .customer-box strong {
@@ -434,28 +451,28 @@ HTML_TEMPLATE = """<!doctype html>
   /* === TITLE SECTION === */
   .title-section {
     text-align: center;
-    margin-bottom: 3mm;
+    margin-bottom: 2mm;
   }
 
   .main-title {
-    font-size: 2em;
+    font-size: 1.8em;
     font-weight: 900;
     color: #1e3a5f;
-    margin: 0 0 1mm 0;
+    margin: 0 0 0.5mm 0;
   }
 
   .plan-type {
-    font-size: 1.4em;
+    font-size: 1.2em;
     color: #f39c12;
     font-weight: 800;
-    margin: 0.5mm 0;
+    margin: 0.3mm 0;
   }
 
   .customer-subtitle {
-    font-size: 1.1em;
+    font-size: 1em;
     color: #2c3e50;
     font-weight: 600;
-    margin-top: 1mm;
+    margin-top: 0.5mm;
   }
 
   /* === ADDRESS BOX === */
@@ -463,16 +480,16 @@ HTML_TEMPLATE = """<!doctype html>
     background: #ffffff;
     border: 1px solid #dadce0;
     border-radius: 4px;
-    padding: 3mm 4mm;
-    margin-bottom: 3mm;
-    font-size: 0.95em;
-    line-height: 1.5;
+    padding: 2mm 3mm;
+    margin-bottom: 2mm;
+    font-size: 0.9em;
+    line-height: 1.4;
     color: #2c3e50;
   }
 
   /* === TOUR SECTION === */
   .tour-section {
-    margin-bottom: 3mm;
+    margin-bottom: 2mm;
   }
 
   .tour-table {
@@ -486,8 +503,8 @@ HTML_TEMPLATE = """<!doctype html>
   .tour-table th {
     background: #1e3a5f;
     color: white;
-    padding: 2mm 1mm;
-    font-size: 0.75em;
+    padding: 1.5mm 0.5mm;
+    font-size: 0.7em;
     font-weight: 700;
     text-align: center;
     border-right: 1px solid rgba(255,255,255,0.2);
@@ -498,10 +515,10 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .tour-table td {
-    padding: 2mm 1mm;
+    padding: 1.5mm 0.5mm;
     text-align: center;
     font-weight: 700;
-    font-size: 0.9em;
+    font-size: 0.85em;
     border-right: 1px solid #dadce0;
     color: #2c3e50;
   }
@@ -514,22 +531,23 @@ HTML_TEMPLATE = """<!doctype html>
   .days-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 3mm;
-    margin-top: 2mm;
+    gap: 2.5mm;
+    margin-top: 1.5mm;
   }
 
   .day-card {
     background: white;
-    border-radius: 6px;
+    border-radius: 5px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     page-break-inside: avoid;
+    border: 1px solid #e0e0e0;
   }
 
   .day-card-header {
-    padding: 2.5mm 3mm;
+    padding: 2mm 2.5mm;
     font-weight: 700;
-    font-size: 1.1em;
+    font-size: 1.05em;
     color: white;
   }
 
@@ -542,22 +560,23 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-body {
-    padding: 3mm;
+    padding: 2.5mm;
     background: white;
+    min-height: 15mm;
   }
 
   .sortiment-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 2mm 0;
+    margin: 0 0 1.5mm 0;
   }
 
   .sortiment-list li {
-    padding: 1.5mm 0;
-    padding-left: 4mm;
+    padding: 1mm 0;
+    padding-left: 3.5mm;
     position: relative;
-    font-size: 0.95em;
-    line-height: 1.3;
+    font-size: 0.9em;
+    line-height: 1.25;
     color: #2c3e50;
   }
 
@@ -570,8 +589,8 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .card-info {
-    padding: 1.5mm 0;
-    font-size: 0.9em;
+    padding: 1mm 0;
+    font-size: 0.85em;
     color: #2c3e50;
   }
 
@@ -589,7 +608,8 @@ HTML_TEMPLATE = """<!doctype html>
     text-align: center;
     color: #9aa0a6;
     font-style: italic;
-    margin: 2mm 0;
+    margin: 1.5mm 0;
+    font-size: 0.9em;
   }
 
   .area-buttons {
@@ -678,16 +698,27 @@ function render(c){
     if (items.length > 0) {
       // Tag hat Lieferungen - blaue Karte
       const sortimente = items.map(it => `<li>${esc(it.sortiment)}</li>`).join("");
-      const bestelltag = items[0]?.bestelltag || "";
-      const bestellschluss = items[0]?.bestellschluss || "";
+      
+      // Sammle alle einzigartigen Bestelltage und -zeiten
+      const bestelltage = [...new Set(items.map(it => it.bestelltag).filter(t => t))];
+      const bestellzeiten = [...new Set(items.map(it => it.bestellschluss).filter(t => t))];
+      
+      let orderInfo = "";
+      if (bestelltage.length > 0) {
+        const tageText = bestelltage.join(", ");
+        orderInfo += `<div class="card-info"><span class="info-label">Bestelltag:</span> <span class="info-value">${esc(tageText)}</span></div>`;
+      }
+      if (bestellzeiten.length > 0) {
+        const zeitenText = bestellzeiten.join(", ");
+        orderInfo += `<div class="card-info"><span class="info-label">Bestellschluss:</span> <span class="info-value">${esc(zeitenText)}</span></div>`;
+      }
       
       dayCards += `
         <div class="day-card active">
           <div class="day-card-header">${d}</div>
           <div class="day-card-body">
             <ul class="sortiment-list">${sortimente}</ul>
-            ${bestelltag ? `<div class="card-info"><span class="info-label">Bestelltag:</span> <span class="info-value">${esc(bestelltag)}</span></div>` : ''}
-            ${bestellschluss ? `<div class="card-info"><span class="info-label">Bestellschluss:</span> <span class="info-value">${esc(bestellschluss)}</span></div>` : ''}
+            ${orderInfo}
           </div>
         </div>`;
     } else {
@@ -702,10 +733,20 @@ function render(c){
     }
   });
 
-  const tourRow  = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
-  const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
+  // Tour-Informationen aufbereiten
+  const tourItems = DAYS.map(d => {
+    const tourNr = c.tours[d] || "—";
+    return `<td>${esc(tourNr)}</td>`;
+  }).join("");
+  
+  const tourHeaders = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
+  // Logo
   const logoHtml = LOGO_SRC ? `<img class="logo" src="${LOGO_SRC}" alt="Logo">` : "";
+  
+  // Aktuelles Datum
+  const heute = new Date();
+  const standDatum = heute.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   return `<div class="paper">
     <div class="paper-content">
@@ -718,7 +759,7 @@ function render(c){
           <div class="customer-box">
             <div><strong>Kunden-Nr:</strong> ${esc(c.kunden_nr)}</div>
             <div><strong>Fachberater:</strong> ${esc(c.fachberater)}</div>
-            <div><strong>Stand:</strong> ${new Date().toLocaleDateString('de-DE')}</div>
+            <div><strong>Stand:</strong> ${standDatum}</div>
           </div>
         </div>
       </div>
@@ -730,15 +771,15 @@ function render(c){
       </div>
 
       <div class="address-box">
-        ${esc(c.name)}<br>
+        <strong>${esc(c.name)}</strong><br>
         ${esc(c.strasse)}<br>
         ${esc(c.plz)} ${esc(c.ort)}
       </div>
 
       <div class="tour-section">
         <table class="tour-table">
-          <thead><tr>${tourHead}</tr></thead>
-          <tbody><tr>${tourRow}</tr></tbody>
+          <thead><tr>${tourHeaders}</tr></thead>
+          <tbody><tr>${tourItems}</tr></tbody>
         </table>
       </div>
 
