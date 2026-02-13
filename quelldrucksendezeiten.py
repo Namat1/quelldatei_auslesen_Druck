@@ -595,14 +595,87 @@ function updateList(){
 }
 
 function printAll(){
-  const count = ORDER.length;
+  // Dialog erstellen für Liefertag-Auswahl
+  const dialogHtml = `
+    <div id="printDialog" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999;">
+      <div style="background:#2d2d2d; padding:30px; border-radius:12px; max-width:500px; width:90%; border:1px solid #3c3c3c;">
+        <h3 style="margin-top:0; color:#e8eaed; font-size:20px;">Drucken nach Liefertag</h3>
+        <p style="color:#9aa0a6; margin-bottom:20px;">Wählen Sie den Liefertag aus. Die Kunden werden nach Tournummer sortiert gedruckt.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+          <button onclick="printByDeliveryDay('Montag')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Montag</button>
+          <button onclick="printByDeliveryDay('Dienstag')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Dienstag</button>
+          <button onclick="printByDeliveryDay('Mittwoch')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Mittwoch</button>
+          <button onclick="printByDeliveryDay('Donnerstag')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Donnerstag</button>
+          <button onclick="printByDeliveryDay('Freitag')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Freitag</button>
+          <button onclick="printByDeliveryDay('Samstag')" style="padding:12px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Samstag</button>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button onclick="printByDeliveryDay('ALLE')" style="flex:1; padding:12px; background:#0f9d58; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Alle Tage</button>
+          <button onclick="closePrintDialog()" style="flex:1; padding:12px; background:#5f6368; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', dialogHtml);
+}
+
+function closePrintDialog(){
+  const dialog = document.getElementById('printDialog');
+  if(dialog) dialog.remove();
+}
+
+function printByDeliveryDay(day){
+  closePrintDialog();
+  
   const areaName = getAreaName(currentArea);
-  if(!confirm(`Möchten Sie wirklich alle ${count} Kunden aus "${areaName}" drucken?`)) return;
-
+  
+  // Kunden filtern und sortieren
+  let customersToPrint = [];
+  
+  if(day === 'ALLE'){
+    // Alle Kunden in ursprünglicher Reihenfolge
+    customersToPrint = ORDER.map(k => ({key: k, data: DATA[k]})).filter(c => c.data);
+  } else {
+    // Nur Kunden die an diesem Tag beliefert werden
+    ORDER.forEach(k => {
+      if(DATA[k] && DATA[k].tours && DATA[k].tours[day]){
+        const tourNr = DATA[k].tours[day];
+        if(tourNr && tourNr !== "—" && tourNr.trim() !== ""){
+          customersToPrint.push({
+            key: k,
+            data: DATA[k],
+            tour: tourNr
+          });
+        }
+      }
+    });
+    
+    // Nach Tournummer sortieren
+    customersToPrint.sort((a, b) => {
+      const tourA = String(a.tour).replace(/\D/g, '');
+      const tourB = String(b.tour).replace(/\D/g, '');
+      return (Number(tourA) || 0) - (Number(tourB) || 0);
+    });
+  }
+  
+  if(customersToPrint.length === 0){
+    alert(`Keine Kunden mit Lieferung am ${day} gefunden.`);
+    return;
+  }
+  
+  const message = day === 'ALLE' 
+    ? `Möchten Sie wirklich alle ${customersToPrint.length} Kunden aus "${areaName}" drucken?`
+    : `Möchten Sie ${customersToPrint.length} Kunden für ${day} (sortiert nach Tour) drucken?`;
+    
+  if(!confirm(message)) return;
+  
+  // HTML generieren
   let html = "";
-  ORDER.forEach(k => { if(DATA[k]) html += render(DATA[k]); });
+  customersToPrint.forEach(c => {
+    html += render(c.data);
+  });
+  
   document.getElementById("out").innerHTML = html;
-
   setTimeout(() => window.print(), 500);
 }
 
