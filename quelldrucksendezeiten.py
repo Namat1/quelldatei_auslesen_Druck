@@ -354,14 +354,20 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     table, th, td { border-color: transparent !important; }
-    .day-header { background: #e8f0fe !important; color: #1a73e8 !important; border-top:2px solid #1a73e8 !important; }
-    .tour-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
-    .main-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
-    .main-table tbody tr:nth-child(odd) { background: #fafafa !important; }
-    .main-table tbody tr:nth-child(even) { background: #ffffff !important; }
+    .day-header { 
+      background: #d5d8dc !important; 
+      color: #2c3e50 !important; 
+      border-top:4px solid #2c3e50 !important; 
+      border-bottom:2px solid #5f6368 !important;
+      font-size:1.05em !important;
+      padding:4px 3px !important;
+    }
+    .tour-table th { background: #e8eaed !important; color: #3c4043 !important; }
+    .main-table th { background: #e8eaed !important; color: #3c4043 !important; }
+    .main-table tbody tr { background: #ffffff !important; }
     .pstd { color: #d0192b !important; }
-    .ptitle { color: #1a73e8 !important; }
-    .head-box { border-bottom-color: #1a73e8 !important; }
+    .ptitle { color: #2c3e50 !important; }
+    .head-box { border-bottom-color: #5f6368 !important; }
   }
 
   .paper-content *{ font-size: 9pt; line-height: 1.0; }
@@ -379,16 +385,16 @@ HTML_TEMPLATE = """<!doctype html>
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.35em; margin:0 0 0.5mm 0; color:#1a73e8; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.35em; margin:0 0 0.5mm 0; color:#2c3e50; }
   .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.3mm 0; font-size:1.05em; }
-  .psub{ text-align:center; color:#555; margin: 0 0 1mm 0; font-weight:600; font-size:0.9em; }
+  .psub{ text-align:center; color:#5f6368; margin: 0 0 1mm 0; font-weight:600; font-size:0.9em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
     gap:3mm;
     margin-bottom:1mm;
-    border-bottom:2px solid #1a73e8;
+    border-bottom:2px solid #5f6368;
     padding-bottom:1mm;
     font-size:9pt;
     line-height:1.15;
@@ -397,17 +403,24 @@ HTML_TEMPLATE = """<!doctype html>
   .tour-info { margin-bottom:0.8mm; }
 
   .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#fafafa; }
-  .tour-table th { background:#e8f0fe; font-size:0.7em; padding:1px 1px; border:none; border-bottom:2px solid #1a73e8; font-weight:700; color:#1a73e8; }
+  .tour-table th { background:#e8eaed; font-size:0.7em; padding:1px 1px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
   .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:2px 1px; text-align:center; font-weight:700; font-size:0.8em; }
 
   table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:0.8mm; }
-  table.main-table th { border:none; border-bottom:2px solid #1a73e8; padding:2px 2px; background:#e8f0fe; font-weight:800; text-align:left; font-size:0.8em; color:#1a73e8; }
-  table.main-table td { border:none; border-bottom:1px solid #e8eaed; padding:2px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.05; }
+  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:3px 3px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.85em; color:#3c4043; }
+  table.main-table td { border:none; border-bottom:1px solid #f5f5f5; padding:3px 3px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.1; }
   
-  table.main-table tbody tr:nth-child(odd) { background:#fafbfc; }
-  table.main-table tbody tr:nth-child(even) { background:#ffffff; }
+  table.main-table tbody tr { background:#ffffff; }
 
-  .day-header { background:#e8f0fe !important; font-weight:900; border-top:2px solid #1a73e8 !important; border-bottom:1px solid #dadce0 !important; color:#1a73e8; }
+  .day-header { 
+    background:#d5d8dc !important; 
+    font-weight:900 !important; 
+    border-top:4px solid #2c3e50 !important; 
+    border-bottom:2px solid #5f6368 !important; 
+    color:#2c3e50 !important;
+    font-size:1.05em !important;
+    padding:4px 3px !important;
+  }
 
   .area-buttons {
     display: grid;
