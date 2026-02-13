@@ -278,13 +278,13 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-  body{ margin:0; background:#f0f2f5; color:#202124; }
+  body{ margin:0; background:#1e1e1e; color:#e8eaed; }
 
   @media screen {
     .app{ display:grid; grid-template-columns: 350px 1fr; height:100vh; padding:15px; gap:15px; }
-    .sidebar, .main{ background: #ffffff; border:1px solid #dadce0; border-radius:12px; box-shadow: 0 1px 3px rgba(60,64,67,0.1); }
-    .list{ height: calc(100vh - 380px); overflow-y:auto; border-top:1px solid #dadce0; margin-top:10px; }
-    .item{ padding:10px; border-bottom:1px solid #f0f2f5; cursor:pointer; font-size:13px; color:#5f6368; transition: background 0.2s; }
+    .sidebar, .main{ background: #2d2d2d; border:1px solid #3c3c3c; border-radius:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .list{ height: calc(100vh - 380px); overflow-y:auto; border-top:1px solid #3c3c3c; margin-top:10px; }
+    .item{ padding:10px; border-bottom:1px solid #3c3c3c; cursor:pointer; font-size:13px; color:#b8b8b8; transition: background 0.2s; }
     .wrap{ height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 
     .paper{
@@ -313,8 +313,8 @@ HTML_TEMPLATE = """<!doctype html>
     .paper-content::-webkit-scrollbar-thumb:hover { background: #555; }
     
     .list::-webkit-scrollbar { width: 8px; }
-    .list::-webkit-scrollbar-track { background: #f8f9fa; }
-    .list::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+    .list::-webkit-scrollbar-track { background: #252525; }
+    .list::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
     .list::-webkit-scrollbar-thumb:hover { background: #1a73e8; }
   }
 
@@ -406,14 +406,14 @@ HTML_TEMPLATE = """<!doctype html>
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 15px;
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid #3c3c3c;
   }
 
   .area-btn {
     padding: 12px;
-    border: 2px solid #dadce0;
-    background: #f8f9fa;
-    color: #5f6368;
+    border: 2px solid #4a4a4a;
+    background: #3a3a3a;
+    color: #b8b8b8;
     cursor: pointer;
     border-radius: 8px;
     font-weight: 600;
@@ -422,9 +422,9 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .area-btn:hover {
-    background: #e8f0fe;
+    background: #444444;
     border-color: #1a73e8;
-    color: #1a73e8;
+    color: #8ab4f8;
   }
 
   .area-btn.active {
@@ -434,7 +434,7 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .item:hover {
-    background: #f8f9fa;
+    background: #383838;
   }
 
   @media print {
@@ -445,7 +445,7 @@ HTML_TEMPLATE = """<!doctype html>
 <body>
 <div class="app">
   <div class="sidebar">
-    <div style="padding:15px; font-weight:bold; font-size:18px; color:#202124; border-bottom:2px solid #dadce0; background:#f8f9fa;">📊 Sendeplan Generator</div>
+    <div style="padding:15px; font-weight:bold; font-size:18px; color:#e8eaed; border-bottom:2px solid #3c3c3c; background:#353535;">📊 Sendeplan Generator</div>
 
     <div class="area-buttons">
       <div class="area-btn active" id="btn-direkt" onclick="switchArea('direkt')">Direkt</div>
@@ -455,7 +455,7 @@ HTML_TEMPLATE = """<!doctype html>
     </div>
 
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
-      <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:6px; border:2px solid #dadce0; font-size:14px; color:#202124; background:#ffffff;">
+      <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:6px; border:2px solid #4a4a4a; font-size:14px; color:#e8eaed; background:#3a3a3a;">
       <button onclick="showOne()" style="padding:10px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#1557b0'" onmouseout="this.style.background='#1a73e8'">Anzeigen</button>
       <button onclick="window.print()" style="padding:10px; background:#0f9d58; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#0d7d47'" onmouseout="this.style.background='#0f9d58'">Drucken</button>
       <button onclick="printAll()" style="padding:10px; background:#ea4335; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:6px; transition: background 0.2s;" onmouseover="this.style.background='#c5221f'" onmouseout="this.style.background='#ea4335'">Alle drucken</button>
@@ -464,7 +464,7 @@ HTML_TEMPLATE = """<!doctype html>
   </div>
 
   <div class="main">
-    <div class="wrap" id="out"><div style="color:#5f6368; padding:20px; font-weight:600; text-align:center;">📋 Bitte Bereich und Kunden wählen...</div></div>
+    <div class="wrap" id="out"><div style="color:#9aa0a6; padding:20px; font-weight:600; text-align:center;">📋 Bitte Bereich und Kunden wählen...</div></div>
   </div>
 </div>
 
@@ -541,7 +541,7 @@ function showOne(){
   const k = document.getElementById("knr").value.trim();
   
   if(!k){
-    document.getElementById("out").innerHTML = "<div style='color:#5f6368; padding:20px; font-weight:500; text-align:center;'>🔍 Bitte Kundennummer eingeben...</div>";
+    document.getElementById("out").innerHTML = "<div style='color:#9aa0a6; padding:20px; font-weight:500; text-align:center;'>🔍 Bitte Kundennummer eingeben...</div>";
     return;
   }
   
@@ -562,7 +562,7 @@ function showOne(){
     // Kunde anzeigen
     document.getElementById("out").innerHTML = render(ALL_DATA[foundArea][k]);
   } else {
-    document.getElementById("out").innerHTML = `<div style="color:#ea4335; padding:20px; font-weight:600; text-align:center;">⚠️ Kunde ${k} nicht gefunden.</div>`;
+    document.getElementById("out").innerHTML = `<div style="color:#f28b82; padding:20px; font-weight:600; text-align:center;">⚠️ Kunde ${k} nicht gefunden.</div>`;
   }
 }
 
@@ -578,7 +578,7 @@ function switchArea(area, preserveInput = false){
   
   if(!preserveInput){
     document.getElementById("knr").value = "";
-    document.getElementById("out").innerHTML = `<div style="color:#1a73e8; padding:20px; font-weight:600; text-align:center;">✓ Bereich gewechselt zu: ${getAreaName(area)}<br><br>Bitte Kunden wählen...</div>`;
+    document.getElementById("out").innerHTML = `<div style="color:#8ab4f8; padding:20px; font-weight:600; text-align:center;">✓ Bereich gewechselt zu: ${getAreaName(area)}<br><br>Bitte Kunden wählen...</div>`;
   }
 }
 
@@ -590,7 +590,7 @@ function getAreaName(area){
 function updateList(){
   document.getElementById("list").innerHTML = ORDER.map(k => {
     const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
-    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#1a73e8">${k}</b> <span style="color:#dadce0">•</span> <span style="color:#5f6368">${esc(name)}</span></div>`;
+    return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
   }).join("");
 }
 
