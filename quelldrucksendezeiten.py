@@ -374,15 +374,24 @@ HTML_TEMPLATE = """<!doctype html>
     
     .tour-section { margin-bottom: 1mm !important; }
     
-    .days-grid { gap: 1.5mm !important; margin-top: 0.8mm !important; }
+    .days-grid { 
+      gap: 1.2mm !important; 
+      margin-top: 0.8mm !important; 
+      display: flex !important;
+      flex-direction: column !important;
+    }
     
     .day-card { 
       box-shadow: 0 0.5px 1px rgba(0,0,0,0.1) !important;
       page-break-inside: avoid !important;
       border: 1px solid #e0e0e0 !important;
+      width: 100% !important;
     }
     
-    .day-card-header { padding: 1mm 1.5mm !important; font-size: 0.95em !important; }
+    .day-card-header { 
+      padding: 1mm 2mm !important; 
+      font-size: 0.9em !important; 
+    }
     
     .day-card.active .day-card-header { 
       background: #1e73e8 !important; 
@@ -394,24 +403,32 @@ HTML_TEMPLATE = """<!doctype html>
       color: white !important;
     }
     
-    .day-card-body { padding: 1.5mm !important; min-height: 10mm !important; }
+    .day-card-body { 
+      padding: 1.2mm 2mm !important; 
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 2mm !important;
+    }
     
     .sortiment-item {
-      padding: 1mm 0 !important;
-      border-bottom: 1px solid #f0f0f0 !important;
+      flex: 1 1 auto !important;
+      min-width: 45% !important;
+      padding: 0.8mm !important;
+      border: 1px solid #f0f0f0 !important;
+      background: #fafafa !important;
     }
     
     .sortiment-name {
-      font-size: 0.85em !important;
+      font-size: 0.82em !important;
       font-weight: 600 !important;
       margin-bottom: 0.3mm !important;
-      line-height: 1.15 !important;
+      line-height: 1.1 !important;
     }
     
     .sortiment-detail {
-      font-size: 0.72em !important;
+      font-size: 0.7em !important;
       margin-top: 0.2mm !important;
-      line-height: 1.15 !important;
+      line-height: 1.1 !important;
     }
     
     .no-delivery {
@@ -547,9 +564,9 @@ HTML_TEMPLATE = """<!doctype html>
 
   /* === DAYS GRID === */
   .days-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5mm;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
     margin-top: 0.8mm;
   }
 
@@ -560,13 +577,16 @@ HTML_TEMPLATE = """<!doctype html>
     box-shadow: 0 0.5px 1px rgba(0,0,0,0.1);
     page-break-inside: avoid;
     border: 1px solid #e0e0e0;
+    width: 100%;
   }
 
   .day-card-header {
-    padding: 1mm 1.5mm;
+    padding: 1mm 2mm;
     font-weight: 700;
-    font-size: 0.95em;
+    font-size: 0.9em;
     color: white;
+    display: flex;
+    align-items: center;
   }
 
   .day-card.active .day-card-header {
@@ -578,32 +598,38 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .day-card-body {
-    padding: 1.5mm;
+    padding: 1.2mm 2mm;
     background: white;
-    min-height: 10mm;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2mm;
   }
 
   .sortiment-item {
-    padding: 1mm 0;
-    border-bottom: 1px solid #f0f0f0;
+    flex: 1 1 auto;
+    min-width: 45%;
+    padding: 0.8mm;
+    border: 1px solid #f0f0f0;
+    border-radius: 3px;
+    background: #fafafa;
   }
 
   .sortiment-item:last-child {
-    border-bottom: none;
+    border: 1px solid #f0f0f0;
   }
 
   .sortiment-name {
-    font-size: 0.85em;
+    font-size: 0.82em;
     font-weight: 600;
     color: #2c3e50;
     margin-bottom: 0.3mm;
-    line-height: 1.15;
+    line-height: 1.1;
   }
 
   .sortiment-detail {
-    font-size: 0.72em;
+    font-size: 0.7em;
     color: #5f6368;
-    line-height: 1.15;
+    line-height: 1.1;
     margin-top: 0.2mm;
   }
 
