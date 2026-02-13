@@ -1,10 +1,11 @@
+```python
 # quelldrucksendezeiten_fixed.py
 # -----------------------------------------------------------------------------
 # VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
 # + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
+# + Tageskarten: JE Sortiment -> Bestelltag + Bestellschluss (einzelne Uhrzeiten)
+# + A4 FIT: IMMER A4 (fixe A4-Box) + Auto-Scale vor Druck (beforeprint + printAll)
 # + FIX: JS-Syntaxfehler (überflüssige "}" in render()) entfernt
-# + CHANGE: In den Tageskarten werden JE Sortiment die einzelnen Bestellzeiten
-#          (Bestelltag + Bestellschluss) ausgegeben (keine Zusammenfassung per Set)
 # -----------------------------------------------------------------------------
 
 import json
@@ -68,9 +69,7 @@ def normalize_time(s) -> str:
 
 
 def safe_time(val) -> str:
-    """
-    verhindert Fälle wie "Montag Montag" (Tag landet fälschlich in Zeit)
-    """
+    """verhindert Fälle wie "Montag Montag" (Tag landet fälschlich in Zeit)"""
     raw = norm(val)
     if re.fullmatch(r"(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag)", raw):
         return ""
@@ -236,9 +235,7 @@ def detect_ds_triplets(columns: List[str]):
 
 
 def load_logo_data_uri() -> str:
-    """
-    Lädt Logo von Festplatte (Fallback), z.B. neben dem Script oder /mnt/data.
-    """
+    """Lädt Logo von Festplatte (Fallback), z.B. neben dem Script oder /mnt/data."""
     candidates = []
     try:
         here = Path(__file__).resolve().parent
@@ -259,18 +256,15 @@ def load_logo_data_uri() -> str:
 
 
 def logo_file_to_data_uri(uploaded_file) -> str:
-    """
-    Wandelt ein hochgeladenes Streamlit-File (PNG/JPG/SVG) in eine Data-URI um.
-    """
+    """Wandelt ein hochgeladenes Streamlit-File (PNG/JPG/SVG) in eine Data-URI um."""
     if not uploaded_file:
         return ""
-    # robustere MIME-Erkennung (z.B. SVG)
     mime = uploaded_file.type or ("image/svg+xml" if str(uploaded_file.name).lower().endswith(".svg") else "image/png")
     b = uploaded_file.getvalue()
     return f"data:{mime};base64," + base64.b64encode(b).decode("ascii")
 
 
-# --- HTML TEMPLATE (A4 MIT SCROLLBALKEN - PRINT OPTIMIERT - 4 BEREICHE) ---
+# --- HTML TEMPLATE (A4 FIX + AUTO-FIT) ---
 HTML_TEMPLATE = """<!doctype html>
 <html lang="de">
 <head>
@@ -322,32 +316,36 @@ HTML_TEMPLATE = """<!doctype html>
     .list::-webkit-scrollbar-thumb:hover { background: #1a73e8; }
   }
 
+  /* =========================
+     PRINT: IMMER A4 + AUTO FIT
+     ========================= */
   @media print {
     body{ background:#fff !important; margin: 0; padding: 0; }
     .sidebar{ display:none !important; }
     .app{ display:block; padding:0; margin: 0; }
     .wrap{ overflow: visible; padding: 0; margin: 0; }
 
+    /* A4 FIX + SCALE über CSS Variable */
     .paper{
       box-shadow: none;
       margin: 0;
       padding: 0;
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      overflow: visible;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
       page-break-after: always;
       background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
       color-adjust: exact;
+      transform-origin: top left;
+      transform: scale(var(--print-scale, 1));
     }
 
     .paper-content{
-      overflow: visible;
-      height: auto;
-      padding: 0;
-      margin: 0;
+      height: 297mm;
+      padding: 12mm 10mm;
+      overflow: hidden;
     }
 
     .paper-content, .paper-content * {
@@ -358,55 +356,54 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
     table, th, td { border-color: transparent !important; }
-    
+
     .paper-content * { font-size: 8.5pt !important; line-height: 1.15 !important; }
-    
+
     .header-section { display: flex !important; justify-content: space-between !important; }
     .logo { height: 14mm !important; }
     .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; padding: 2mm 3mm !important; }
     .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; padding: 2mm 3mm !important; }
-    
+
     .main-title { color: #1e3a5f !important; font-size: 1.8em !important; }
     .plan-type { color: #f39c12 !important; font-size: 1.2em !important; }
-    
+
     .tour-table th { background: #1e3a5f !important; color: white !important; padding: 1.5mm 0.5mm !important; }
     .tour-table td { border-right: 1px solid #dadce0 !important; padding: 1.5mm 0.5mm !important; }
-    
+
     .days-grid { gap: 2.5mm !important; }
-    
-    .day-card { 
+
+    .day-card {
       box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
       page-break-inside: avoid !important;
       border: 1px solid #e0e0e0 !important;
     }
-    
+
     .day-card-header { padding: 2mm 2.5mm !important; }
-    
-    .day-card.active .day-card-header { 
-      background: #1e73e8 !important; 
+
+    .day-card.active .day-card-header {
+      background: #1e73e8 !important;
       color: white !important;
     }
-    
-    .day-card.inactive .day-card-header { 
-      background: #9aa0a6 !important; 
+
+    .day-card.inactive .day-card-header {
+      background: #9aa0a6 !important;
       color: white !important;
     }
-    
+
     .day-card-body { padding: 2.5mm !important; }
-    
+
     .sortiment-list li {
       font-size: 0.9em !important;
       padding: 1mm 0 !important;
     }
 
     .li-sub { font-size: 0.82em !important; }
-    
+
     .sortiment-list li:before {
       color: #1e73e8 !important;
     }
-    
-    .card-info { font-size: 0.85em !important; }
   }
 
   .paper-content *{ font-size: 8.5pt; line-height: 1.15; }
@@ -517,9 +514,7 @@ HTML_TEMPLATE = """<!doctype html>
     border-right: 1px solid rgba(255,255,255,0.2);
   }
 
-  .tour-table th:last-child {
-    border-right: none;
-  }
+  .tour-table th:last-child { border-right: none; }
 
   .tour-table td {
     padding: 1.5mm 0.5mm;
@@ -530,9 +525,7 @@ HTML_TEMPLATE = """<!doctype html>
     color: #2c3e50;
   }
 
-  .tour-table td:last-child {
-    border-right: none;
-  }
+  .tour-table td:last-child { border-right: none; }
 
   /* === DAYS GRID === */
   .days-grid {
@@ -558,13 +551,8 @@ HTML_TEMPLATE = """<!doctype html>
     color: white;
   }
 
-  .day-card.active .day-card-header {
-    background: #1e73e8;
-  }
-
-  .day-card.inactive .day-card-header {
-    background: #9aa0a6;
-  }
+  .day-card.active .day-card-header { background: #1e73e8; }
+  .day-card.inactive .day-card-header { background: #9aa0a6; }
 
   .day-card-body {
     padding: 2.5mm;
@@ -595,32 +583,12 @@ HTML_TEMPLATE = """<!doctype html>
     font-weight: bold;
   }
 
-  .li-main{
-    display:block;
-    font-weight:700;
-  }
-
+  .li-main{ display:block; font-weight:700; }
   .li-sub{
     display:block;
     font-size:0.85em;
     color:#5f6368;
     margin-top:0.5mm;
-  }
-
-  .card-info {
-    padding: 1mm 0;
-    font-size: 0.85em;
-    color: #2c3e50;
-  }
-
-  .info-label {
-    font-weight: 600;
-    color: #5f6368;
-  }
-
-  .info-value {
-    font-weight: 700;
-    color: #2c3e50;
   }
 
   .no-delivery {
@@ -663,13 +631,9 @@ HTML_TEMPLATE = """<!doctype html>
     color: #ffffff;
   }
 
-  .item:hover {
-    background: #383838;
-  }
+  .item:hover { background: #383838; }
 
-  @media print {
-    tr { page-break-inside: avoid; }
-  }
+  @media print { tr { page-break-inside: avoid; } }
 </style>
 </head>
 <body>
@@ -686,9 +650,9 @@ HTML_TEMPLATE = """<!doctype html>
 
     <div style="padding:15px; display:flex; flex-direction:column; gap:10px;">
       <input id="knr" placeholder="Kunden-Nr..." oninput="showOne()" style="width:100%; padding:10px; border-radius:6px; border:2px solid #4a4a4a; font-size:14px; color:#e8eaed; background:#3a3a3a;">
-      <button onclick="showOne()" style="padding:10px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#1557b0'" onmouseout="this.style.background='#1a73e8'">Anzeigen</button>
-      <button onclick="window.print()" style="padding:10px; background:#0f9d58; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600; transition: background 0.2s;" onmouseover="this.style.background='#0d7d47'" onmouseout="this.style.background='#0f9d58'">Drucken</button>
-      <button onclick="printAll()" style="padding:10px; background:#ea4335; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:6px; transition: background 0.2s;" onmouseover="this.style.background='#c5221f'" onmouseout="this.style.background='#ea4335'">Alle drucken</button>
+      <button onclick="showOne()" style="padding:10px; background:#1a73e8; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Anzeigen</button>
+      <button onclick="window.print()" style="padding:10px; background:#0f9d58; color:white; border:none; cursor:pointer; border-radius:6px; font-weight:600;">Drucken</button>
+      <button onclick="printAll()" style="padding:10px; background:#ea4335; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:6px;">Alle drucken</button>
     </div>
     <div class="list" id="list"></div>
   </div>
@@ -706,12 +670,6 @@ let DATA = ALL_DATA['direkt'] || {};
 let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
-// Debug: Zeige Daten-Status
-console.log("ALL_DATA:", ALL_DATA);
-console.log("Anzahl Bereiche:", Object.keys(ALL_DATA || {}).length);
-console.log("Direkt Kunden:", Object.keys(DATA).length);
-
-// Zeige Hinweis wenn keine Daten
 if (Object.keys(ALL_DATA || {}).length === 0) {
   document.getElementById("out").innerHTML = `
     <div style="color:#ea4335; padding:40px; text-align:center; font-size:16px;">
@@ -731,14 +689,49 @@ if (Object.keys(ALL_DATA || {}).length === 0) {
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
+/* =========================
+   A4 AUTO-FIT (SCALE)
+   ========================= */
+function fitPaperToA4(paperEl){
+  if(!paperEl) return;
+
+  // Reset
+  paperEl.style.setProperty('--print-scale', 1);
+
+  const content = paperEl.querySelector('.paper-content');
+  if(!content) return;
+
+  let scale = 1.0;
+  const minScale = 0.72;   // nicht kleiner, sonst unlesbar
+  const step = 0.02;
+
+  for(let i=0; i<40; i++){
+    const over = content.scrollHeight - content.clientHeight;
+    if(over <= 0) break;
+    scale = Math.max(minScale, scale - step);
+    paperEl.style.setProperty('--print-scale', scale);
+    if(scale <= minScale) break;
+  }
+}
+
+function fitAllPapers(){
+  document.querySelectorAll('.paper').forEach(p => fitPaperToA4(p));
+}
+
+window.addEventListener('beforeprint', () => {
+  fitAllPapers();
+});
+
+/* =========================
+   RENDER
+   ========================= */
 function render(c){
-  // Erstelle Karten für jeden Tag
   let dayCards = "";
+
   DAYS.forEach(d => {
     const items = (c.bestell || []).filter(it => it.liefertag === d);
-    
+
     if (items.length > 0) {
-      // JE Sortiment als eigene Zeile inkl. Bestelltag + Bestellschluss
       const lines = items.map(it => {
         const s = esc(it.sortiment || "—");
         const bt = esc(it.bestelltag || "—");
@@ -757,7 +750,6 @@ function render(c){
           </div>
         </div>`;
     } else {
-      // Tag ohne Lieferungen - graue Karte
       dayCards += `
         <div class="day-card inactive">
           <div class="day-card-header">${d}</div>
@@ -768,18 +760,15 @@ function render(c){
     }
   });
 
-  // Tour-Informationen aufbereiten
   const tourItems = DAYS.map(d => {
     const tourNr = (c.tours && c.tours[d]) ? c.tours[d] : "—";
     return `<td>${esc(tourNr)}</td>`;
   }).join("");
-  
+
   const tourHeaders = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
-  // Logo
   const logoHtml = LOGO_SRC ? `<img class="logo" src="${LOGO_SRC}" alt="Logo">` : "";
-  
-  // Aktuelles Datum
+
   const heute = new Date();
   const standDatum = heute.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -836,17 +825,17 @@ function findCustomerInAllAreas(knr){
 
 function showOne(){
   const k = document.getElementById("knr").value.trim();
-  
+
   if(!k){
     document.getElementById("out").innerHTML = "<div style='color:#9aa0a6; padding:20px; font-weight:500; text-align:center;'>🔍 Bitte Kundennummer eingeben...</div>";
     return;
   }
-  
+
   if(DATA && DATA[k]){
     document.getElementById("out").innerHTML = render(DATA[k]);
     return;
   }
-  
+
   const foundArea = findCustomerInAllAreas(k);
   if(foundArea){
     if(foundArea !== currentArea){
@@ -868,10 +857,11 @@ function switchArea(area, preserveInput = false){
   if (b) b.classList.add('active');
 
   updateList();
-  
+
   if(!preserveInput){
     document.getElementById("knr").value = "";
-    document.getElementById("out").innerHTML = `<div style="color:#8ab4f8; padding:20px; font-weight:600; text-align:center;">✓ Bereich gewechselt zu: ${getAreaName(area)}<br><br>Bitte Kunden wählen...</div>`;
+    document.getElementById("out").innerHTML =
+      `<div style="color:#8ab4f8; padding:20px; font-weight:600; text-align:center;">✓ Bereich gewechselt zu: ${getAreaName(area)}<br><br>Bitte Kunden wählen...</div>`;
   }
 }
 
@@ -889,7 +879,7 @@ function updateList(){
     `;
     return;
   }
-  
+
   document.getElementById("list").innerHTML = ORDER.map(k => {
     const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
     return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
@@ -927,10 +917,10 @@ function closePrintDialog(){
 
 function printByDeliveryDay(day){
   closePrintDialog();
-  
+
   const areaName = getAreaName(currentArea);
   let customersToPrint = [];
-  
+
   if(day === 'ALLE'){
     customersToPrint = ORDER.map(k => ({key: k, data: DATA[k]})).filter(c => c.data);
   } else {
@@ -949,25 +939,27 @@ function printByDeliveryDay(day){
       return (Number(tourA) || 0) - (Number(tourB) || 0);
     });
   }
-  
+
   if(customersToPrint.length === 0){
     alert(`Keine Kunden mit Lieferung am ${day} gefunden.`);
     return;
   }
-  
-  const message = day === 'ALLE' 
+
+  const message = day === 'ALLE'
     ? `Möchten Sie wirklich alle ${customersToPrint.length} Kunden aus "${areaName}" drucken?`
     : `Möchten Sie ${customersToPrint.length} Kunden für ${day} (sortiert nach Tour) drucken?`;
-    
+
   if(!confirm(message)) return;
-  
+
   let html = "";
-  customersToPrint.forEach(c => {
-    html += render(c.data);
-  });
-  
+  customersToPrint.forEach(c => { html += render(c.data); });
+
   document.getElementById("out").innerHTML = html;
-  setTimeout(() => window.print(), 500);
+
+  setTimeout(() => {
+    fitAllPapers();     // <<< WICHTIG: vor Druck fitten
+    window.print();
+  }, 500);
 }
 
 updateList();
@@ -984,7 +976,7 @@ st.write("Verarbeitet 4 Bereiche: Direkt, MK, HuPa NMS, HuPa Malchow")
 st.subheader("Logo (optional)")
 logo_up = st.file_uploader("Logo oben im Druck (PNG/JPG/SVG)", type=["png", "jpg", "jpeg", "svg"])
 
-# Optional Preview
+# Preview / Fallback
 logo_preview_uri = logo_file_to_data_uri(logo_up) or load_logo_data_uri()
 if logo_preview_uri:
     st.image(logo_preview_uri, caption="Verwendetes Logo (Vorschau)", use_container_width=True)
@@ -1057,7 +1049,7 @@ if up:
                     if l_col:
                         tag = norm(r.get(l_col, ""))
                         if not tag:
-                            tag = k[2]  # Fallback Spaltennamen
+                            tag = k[2]  # Fallback Spaltennamen (wenn Bestelltag-Zelle leer)
                     else:
                         tag = k[2]
 
@@ -1106,34 +1098,22 @@ if up:
         all_data[area_key] = data
         st.success(f"✓ {sheet_name}: {len(data)} Kunden verarbeitet")
 
-    # Debug: Prüfe Datenstruktur
-    st.write("**Debug-Info:**")
-    st.write(f"- all_data Keys: {list(all_data.keys())}")
-    st.write(f"- Direkt Kunden-Anzahl: {len(all_data.get('direkt', {}))}")
+    st.write("---")
+    st.write(f"**Gesamt:** {sum(len(all_data[k]) for k in all_data)} Kunden in {len(all_data)} Bereichen")
 
-    # Erstelle JSON
+    # JSON + HTML
     try:
         json_data = json.dumps(all_data, ensure_ascii=False, separators=(",", ":"))
-        st.write(f"- JSON Größe: {len(json_data)} Zeichen")
-        st.write(f"- JSON Start: {json_data[:100]}...")
     except Exception as e:
         st.error(f"Fehler beim JSON-Erstellen: {e}")
         json_data = "{}"
 
-    # Erstelle HTML
-    html = HTML_TEMPLATE.replace(
-        "__DATA_JSON__", json_data
-    ).replace(
-        "__LOGO_DATAURI__", logo_preview_uri or ""
-    )
+    html = HTML_TEMPLATE.replace("__DATA_JSON__", json_data).replace("__LOGO_DATAURI__", logo_preview_uri or "")
 
-    st.write(f"- HTML Größe: {len(html)} Zeichen")
-
-    st.write("---")
-    st.write(f"**Gesamt:** {sum(len(all_data[k]) for k in all_data)} Kunden in {len(all_data)} Bereichen")
     st.download_button(
         "Download Sendeplan (A4)",
         data=html,
         file_name="sendeplan_4_bereiche.html",
         mime="text/html"
     )
+```
