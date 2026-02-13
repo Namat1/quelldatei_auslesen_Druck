@@ -1,13 +1,3 @@
-```python
-# quelldrucksendezeiten_fixed.py
-# -----------------------------------------------------------------------------
-# VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
-# + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
-# + Tageskarten: JE Sortiment -> Bestelltag + Bestellschluss (einzelne Uhrzeiten)
-# + A4 FIT: IMMER A4 (fixe A4-Box) + Auto-Scale vor Druck (beforeprint + printAll)
-# + FIX: JS-Syntaxfehler (überflüssige "}" in render()) entfernt
-# -----------------------------------------------------------------------------
-
 import json
 import re
 import datetime
