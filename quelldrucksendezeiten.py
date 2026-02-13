@@ -411,8 +411,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
     
     .sortiment-item {
-      flex: 1 1 auto !important;
-      min-width: 45% !important;
+      flex: 0 0 calc(50% - 1mm) !important;
       padding: 0.8mm !important;
       border: 1px solid #f0f0f0 !important;
       background: #fafafa !important;
@@ -420,7 +419,8 @@ HTML_TEMPLATE = """<!doctype html>
     
     .sortiment-name {
       font-size: 0.82em !important;
-      font-weight: 600 !important;
+      font-weight: 700 !important;
+      color: #d0192b !important;
       margin-bottom: 0.3mm !important;
       line-height: 1.1 !important;
     }
@@ -606,8 +606,7 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .sortiment-item {
-    flex: 1 1 auto;
-    min-width: 45%;
+    flex: 0 0 calc(50% - 1mm);
     padding: 0.8mm;
     border: 1px solid #f0f0f0;
     border-radius: 3px;
@@ -620,8 +619,8 @@ HTML_TEMPLATE = """<!doctype html>
 
   .sortiment-name {
     font-size: 0.82em;
-    font-weight: 600;
-    color: #2c3e50;
+    font-weight: 700;
+    color: #d0192b;
     margin-bottom: 0.3mm;
     line-height: 1.1;
   }
