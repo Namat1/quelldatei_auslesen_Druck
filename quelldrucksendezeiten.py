@@ -354,111 +354,242 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     table, th, td { border-color: transparent !important; }
-    .day-header { 
-      background: #e8eaed !important; 
-      color: #2c3e50 !important; 
-      font-size:1.03em !important;
-      padding:3px 2px !important;
+    
+    .header-section { display: flex !important; justify-content: space-between !important; }
+    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; }
+    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; }
+    
+    .main-title { color: #1e3a5f !important; }
+    .plan-type { color: #f39c12 !important; }
+    
+    .tour-table th { background: #1e3a5f !important; color: white !important; }
+    .tour-table td { border-right: 1px solid #dadce0 !important; }
+    
+    .day-card { 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+      page-break-inside: avoid !important;
     }
-    .day-header td {
-      border-top: 2px solid #5f6368 !important;
-      border-left: 2px solid #5f6368 !important;
-      border-right: 2px solid #5f6368 !important;
+    
+    .day-card.active .day-card-header { 
+      background: #1e73e8 !important; 
+      color: white !important;
     }
-    table.main-table tbody tr:not(.day-header) td {
-      border-left: 2px solid #5f6368 !important;
-      border-right: 2px solid #5f6368 !important;
+    
+    .day-card.inactive .day-card-header { 
+      background: #9aa0a6 !important; 
+      color: white !important;
     }
-    table.main-table tbody tr:not(.day-header):has(+ .day-header) td {
-      border-bottom: 2px solid #5f6368 !important;
+    
+    .sortiment-list li:before {
+      color: #1e73e8 !important;
     }
-    table.main-table tbody tr:last-child:not(.day-header) td {
-      border-bottom: 2px solid #5f6368 !important;
-    }
-    .paper-content * { font-size: 8.5pt !important; line-height: 0.98 !important; }
-    .tour-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.75em !important; padding:2px 1px !important; }
-    .tour-table td { padding:3px 1px !important; font-size:0.85em !important; }
-    .main-table th { background: #e8eaed !important; color: #3c4043 !important; font-size:0.85em !important; padding:2.5px 2px !important; }
-    .main-table td { padding:2.5px 2px !important; font-size:0.9em !important; line-height:1.08 !important; }
-    .pstd { color: #d0192b !important; font-size:1.2em !important; margin:0.5mm 0 !important; }
-    .ptitle { color: #2c3e50 !important; font-size:1.5em !important; margin:0 0 0.8mm 0 !important; }
-    .psub { font-size:1.05em !important; margin: 0 0 1.5mm 0 !important; }
-    .head-box { border-bottom-color: #5f6368 !important; font-size:10.5pt !important; line-height:1.4 !important; gap:5mm !important; margin-bottom:2mm !important; padding-bottom:2mm !important; }
-    .logo { height: 16mm !important; }
-    .logo-wrap { margin: 0 0 1.5mm 0 !important; }
-    .tour-info { margin-bottom:1.5mm !important; }
-    table.main-table { margin-top:1.5mm !important; }
   }
 
-  .paper-content *{ font-size: 8.5pt; line-height: 0.98; }
+  .paper-content *{ font-size: 9.5pt; line-height: 1.2; }
 
-  /* === LOGO === */
-  .logo-wrap{
-    width: 100%;
-    text-align: center;
-    margin: 0 0 1.5mm 0;
+  /* === HEADER SECTION === */
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3mm;
+    padding-bottom: 2mm;
   }
-  .logo{
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logo {
     height: 16mm;
-    max-width: 100%;
-    object-fit: contain;
-    display: inline-block;
+    margin-bottom: 1mm;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 0.8mm 0; color:#2c3e50; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.2em; }
-  .psub{ text-align:center; color:#5f6368; margin: 0 0 1.5mm 0; font-weight:600; font-size:1.05em; }
-
-  .head-box{
-    display:flex;
-    justify-content:space-between;
-    gap:5mm;
-    margin-bottom:2mm;
-    border-bottom:2px solid #5f6368;
-    padding-bottom:2mm;
-    font-size:10.5pt;
-    line-height:1.4;
-    font-weight:600;
+  .logo-subtitle {
+    font-size: 0.9em;
+    color: #5f6368;
+    font-weight: 500;
   }
 
-  .tour-info { margin-bottom:1.5mm; }
+  .header-right {
+    text-align: right;
+  }
 
-  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#fafafa; }
-  .tour-table th { background:#e8eaed; font-size:0.75em; padding:2px 1px; border:none; border-bottom:2px solid #5f6368; font-weight:700; color:#3c4043; }
-  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:3px 1px; text-align:center; font-weight:700; font-size:0.85em; }
+  .customer-box {
+    background: #f8f9fa;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 3mm 4mm;
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:1.5mm; }
-  table.main-table th { border:none; border-bottom:2px solid #5f6368; padding:2.5px 2px; background:#e8eaed; font-weight:800; text-align:left; font-size:0.85em; color:#3c4043; }
-  table.main-table td { border:none; padding:2.5px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.9em; line-height:1.08; }
-  
-  table.main-table tbody tr { background:#ffffff; }
+  .customer-box strong {
+    font-weight: 600;
+    color: #2c3e50;
+  }
 
-  .day-header { 
-    background:#e8eaed !important; 
-    font-weight:900 !important; 
-    color:#2c3e50 !important;
-    font-size:1.03em !important;
-    padding:3px 2px !important;
+  /* === TITLE SECTION === */
+  .title-section {
+    text-align: center;
+    margin-bottom: 3mm;
   }
-  
-  /* Rahmen um jeden Tag-Block */
-  .day-header td {
-    border-top: 2px solid #5f6368 !important;
-    border-left: 2px solid #5f6368 !important;
-    border-right: 2px solid #5f6368 !important;
+
+  .main-title {
+    font-size: 2em;
+    font-weight: 900;
+    color: #1e3a5f;
+    margin: 0 0 1mm 0;
   }
-  
-  table.main-table tbody tr:not(.day-header) td {
-    border-left: 2px solid #5f6368;
-    border-right: 2px solid #5f6368;
+
+  .plan-type {
+    font-size: 1.4em;
+    color: #f39c12;
+    font-weight: 800;
+    margin: 0.5mm 0;
   }
-  
-  table.main-table tbody tr:not(.day-header):has(+ .day-header) td {
-    border-bottom: 2px solid #5f6368 !important;
+
+  .customer-subtitle {
+    font-size: 1.1em;
+    color: #2c3e50;
+    font-weight: 600;
+    margin-top: 1mm;
   }
-  
-  table.main-table tbody tr:last-child:not(.day-header) td {
-    border-bottom: 2px solid #5f6368 !important;
+
+  /* === ADDRESS BOX === */
+  .address-box {
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 3mm 4mm;
+    margin-bottom: 3mm;
+    font-size: 0.95em;
+    line-height: 1.5;
+    color: #2c3e50;
+  }
+
+  /* === TOUR SECTION === */
+  .tour-section {
+    margin-bottom: 3mm;
+  }
+
+  .tour-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #f8f9fa;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tour-table th {
+    background: #1e3a5f;
+    color: white;
+    padding: 2mm 1mm;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .tour-table th:last-child {
+    border-right: none;
+  }
+
+  .tour-table td {
+    padding: 2mm 1mm;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9em;
+    border-right: 1px solid #dadce0;
+    color: #2c3e50;
+  }
+
+  .tour-table td:last-child {
+    border-right: none;
+  }
+
+  /* === DAYS GRID === */
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3mm;
+    margin-top: 2mm;
+  }
+
+  .day-card {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    page-break-inside: avoid;
+  }
+
+  .day-card-header {
+    padding: 2.5mm 3mm;
+    font-weight: 700;
+    font-size: 1.1em;
+    color: white;
+  }
+
+  .day-card.active .day-card-header {
+    background: #1e73e8;
+  }
+
+  .day-card.inactive .day-card-header {
+    background: #9aa0a6;
+  }
+
+  .day-card-body {
+    padding: 3mm;
+    background: white;
+  }
+
+  .sortiment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2mm 0;
+  }
+
+  .sortiment-list li {
+    padding: 1.5mm 0;
+    padding-left: 4mm;
+    position: relative;
+    font-size: 0.95em;
+    line-height: 1.3;
+    color: #2c3e50;
+  }
+
+  .sortiment-list li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #1e73e8;
+    font-weight: bold;
+  }
+
+  .card-info {
+    padding: 1.5mm 0;
+    font-size: 0.9em;
+    color: #2c3e50;
+  }
+
+  .info-label {
+    font-weight: 600;
+    color: #5f6368;
+  }
+
+  .info-value {
+    font-weight: 700;
+    color: #2c3e50;
+  }
+
+  .no-delivery {
+    text-align: center;
+    color: #9aa0a6;
+    font-style: italic;
+    margin: 2mm 0;
   }
 
   .area-buttons {
@@ -539,52 +670,84 @@ const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
 function render(c){
-  let tableRows = "";
+  // Erstelle Karten für jeden Tag
+  let dayCards = "";
   DAYS.forEach(d => {
     const items = (c.bestell || []).filter(it => it.liefertag === d);
+    
     if (items.length > 0) {
-      items.forEach((it, idx) => {
-        const rowClass = idx === 0 ? "day-header" : "";
-        tableRows += `<tr class="${rowClass}">
-          <td style="width:18%">${idx === 0 ? d : ""}</td>
-          <td style="width:47%">${esc(it.sortiment)}</td>
-          <td style="width:17%">${esc(it.bestelltag)}</td>
-          <td style="width:18%">${esc(it.bestellschluss)}</td>
-        </tr>`;
-      });
+      // Tag hat Lieferungen - blaue Karte
+      const sortimente = items.map(it => `<li>${esc(it.sortiment)}</li>`).join("");
+      const bestelltag = items[0]?.bestelltag || "";
+      const bestellschluss = items[0]?.bestellschluss || "";
+      
+      dayCards += `
+        <div class="day-card active">
+          <div class="day-card-header">${d}</div>
+          <div class="day-card-body">
+            <ul class="sortiment-list">${sortimente}</ul>
+            ${bestelltag ? `<div class="card-info"><span class="info-label">Bestelltag:</span> <span class="info-value">${esc(bestelltag)}</span></div>` : ''}
+            ${bestellschluss ? `<div class="card-info"><span class="info-label">Bestellschluss:</span> <span class="info-value">${esc(bestellschluss)}</span></div>` : ''}
+          </div>
+        </div>`;
+    } else {
+      // Tag ohne Lieferungen - graue Karte
+      dayCards += `
+        <div class="day-card inactive">
+          <div class="day-card-header">${d}</div>
+          <div class="day-card-body">
+            <p class="no-delivery">Keine Lieferung</p>
+          </div>
+        </div>`;
     }
   });
 
   const tourRow  = DAYS.map(d => `<td>${esc(c.tours[d] || "—")}</td>`).join("");
   const tourHead = DAYS.map(d => `<th>${d.substring(0,2)}</th>`).join("");
 
-  const logoHtml = LOGO_SRC ? `<div class="logo-wrap"><img class="logo" src="${LOGO_SRC}" alt="Logo"></div>` : "";
+  const logoHtml = LOGO_SRC ? `<img class="logo" src="${LOGO_SRC}" alt="Logo">` : "";
 
   return `<div class="paper">
     <div class="paper-content">
-      ${logoHtml}
-      <div class="ptitle">Sende- &amp; Belieferungsplan</div>
-      <div class="pstd">${esc(c.plan_typ)}</div>
-      <div class="psub">${esc(c.name)} | ${esc(c.bereich)}</div>
-
-      <div class="head-box">
-        <div><b>${esc(c.name)}</b><br>${esc(c.strasse)}<br>${esc(c.plz)} ${esc(c.ort)}</div>
-        <div style="text-align:right">Kunden-Nr: <b>${esc(c.kunden_nr)}</b><br>Fachberater: <b>${esc(c.fachberater)}</b></div>
+      <div class="header-section">
+        <div class="header-left">
+          ${logoHtml}
+          <div class="logo-subtitle">Das Fleischwerk von EDEKA Nord</div>
+        </div>
+        <div class="header-right">
+          <div class="customer-box">
+            <div><strong>Kunden-Nr:</strong> ${esc(c.kunden_nr)}</div>
+            <div><strong>Fachberater:</strong> ${esc(c.fachberater)}</div>
+            <div><strong>Stand:</strong> ${new Date().toLocaleDateString('de-DE')}</div>
+          </div>
+        </div>
       </div>
 
-      <div class="tour-info">
+      <div class="title-section">
+        <h1 class="main-title">Sende- &amp; Belieferungsplan</h1>
+        <div class="plan-type">${esc(c.plan_typ)}</div>
+        <div class="customer-subtitle">${esc(c.name)} | ${esc(c.bereich)}</div>
+      </div>
+
+      <div class="address-box">
+        ${esc(c.name)}<br>
+        ${esc(c.strasse)}<br>
+        ${esc(c.plz)} ${esc(c.ort)}
+      </div>
+
+      <div class="tour-section">
         <table class="tour-table">
           <thead><tr>${tourHead}</tr></thead>
           <tbody><tr>${tourRow}</tr></tbody>
         </table>
       </div>
 
-      <table class="main-table">
-        <thead><tr><th>Liefertag</th><th>Sortiment</th><th>Bestelltag</th><th>Bestellzeitende</th></tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+      <div class="days-grid">
+        ${dayCards}
+      </div>
     </div>
   </div>`;
+}
 }
 
 function findCustomerInAllAreas(knr){
