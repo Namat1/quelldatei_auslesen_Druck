@@ -274,7 +274,7 @@ HTML_TEMPLATE = """<!doctype html>
 <style>
   @page { 
     size: A4 portrait; 
-    margin: 5mm 5mm;
+    margin: 6mm 5mm;
   }
 
   *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -353,53 +353,61 @@ HTML_TEMPLATE = """<!doctype html>
       color-adjust: exact !important;
     }
 
-    table, th, td { border-color: #000 !important; }
-    .day-header { background: #e0e0e0 !important; }
-    .tour-table th { background: #eee !important; }
-    .main-table th { background: #f2f2f2 !important; }
+    table, th, td { border-color: transparent !important; }
+    .day-header { background: #e8f0fe !important; color: #1a73e8 !important; border-top:2px solid #1a73e8 !important; }
+    .tour-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
+    .main-table th { background: #e8f0fe !important; color: #1a73e8 !important; }
+    .main-table tbody tr:nth-child(odd) { background: #fafbfc !important; }
+    .main-table tbody tr:nth-child(even) { background: #ffffff !important; }
     .pstd { color: #d0192b !important; }
+    .ptitle { color: #1a73e8 !important; }
+    .head-box { border-bottom-color: #1a73e8 !important; }
   }
 
-  .paper-content *{ font-size: 10pt; line-height: 1.0; }
+  .paper-content *{ font-size: 10pt; line-height: 1.05; }
 
   /* === LOGO === */
   .logo-wrap{
     width: 100%;
     text-align: center;
-    margin: 0 0 0.5mm 0;
+    margin: 0 0 1.5mm 0;
   }
   .logo{
-    height: 8mm;
+    height: 15mm;
     max-width: 100%;
     object-fit: contain;
     display: inline-block;
   }
 
-  .ptitle{ text-align:center; font-weight:900; font-size:1.25em; margin:0 0 0.3mm 0; }
-  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.2mm 0; font-size:1em; }
-  .psub{ text-align:center; color:#333; margin: 0 0 0.5mm 0; font-weight:700; font-size:0.85em; }
+  .ptitle{ text-align:center; font-weight:900; font-size:1.5em; margin:0 0 1mm 0; color:#1a73e8; }
+  .pstd{ text-align:center; color:#d0192b; font-weight:800; margin:0.5mm 0; font-size:1.15em; }
+  .psub{ text-align:center; color:#555; margin: 0 0 2mm 0; font-weight:600; font-size:1em; }
 
   .head-box{
     display:flex;
     justify-content:space-between;
-    gap:2mm;
-    margin-bottom:0.5mm;
-    border-bottom:1px solid #000;
-    padding-bottom:0.5mm;
-    font-size:9pt;
+    gap:5mm;
+    margin-bottom:2mm;
+    border-bottom:2px solid #1a73e8;
+    padding-bottom:2mm;
+    font-size:10.5pt;
+    line-height:1.3;
   }
 
-  .tour-info { margin-bottom:0.5mm; }
+  .tour-info { margin-bottom:1.5mm; }
 
-  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-  .tour-table th { background:#eee; font-size:0.7em; padding:1px 0px; border:1px solid #000; font-weight:700; }
-  .tour-table td { border:1px solid #000; padding:1px 0px; text-align:center; font-weight:800; font-size:0.8em; }
+  .tour-table { width:100%; border-collapse:collapse; table-layout:fixed; background:#f8f9fa; }
+  .tour-table th { background:#e8f0fe; font-size:0.75em; padding:2px 1px; border:none; border-bottom:2px solid #1a73e8; font-weight:700; color:#1a73e8; }
+  .tour-table td { border:none; border-bottom:1px solid #dadce0; padding:3px 1px; text-align:center; font-weight:700; font-size:0.85em; }
 
-  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:2px solid #000; margin-top:0.5mm; }
-  table.main-table th { border:1px solid #000; padding:1px 2px; background:#f2f2f2; font-weight:800; text-align:left; font-size:0.8em; }
-  table.main-table td { border:1px solid #000; padding:1px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.95em; line-height:1.0; }
+  table.main-table { width:100%; border-collapse:collapse; table-layout:fixed; border:none; margin-top:1.5mm; }
+  table.main-table th { border:none; border-bottom:2px solid #1a73e8; padding:3px 2px; background:#e8f0fe; font-weight:800; text-align:left; font-size:0.85em; color:#1a73e8; }
+  table.main-table td { border:none; border-bottom:1px solid #e8eaed; padding:3px 2px; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; font-size:0.95em; line-height:1.2; }
+  
+  table.main-table tbody tr:nth-child(odd) { background:#fafbfc; }
+  table.main-table tbody tr:nth-child(even) { background:#ffffff; }
 
-  .day-header { background:#e0e0e0 !important; font-weight:900; border-top:2px solid #000 !important; }
+  .day-header { background:#e8f0fe !important; font-weight:900; border-top:2px solid #1a73e8 !important; border-bottom:1px solid #dadce0 !important; color:#1a73e8; }
 
   .area-buttons {
     display: grid;
