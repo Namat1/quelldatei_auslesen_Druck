@@ -357,22 +357,50 @@ HTML_TEMPLATE = """<!doctype html>
     
     .paper-content * { font-size: 7.5pt !important; line-height: 1.05 !important; }
     
-    .header-section { display: flex !important; justify-content: space-between !important; margin-bottom: 1mm !important; padding-bottom: 0.5mm !important; }
-    .logo { height: 10mm !important; margin-bottom: 0.3mm !important; }
-    .logo-subtitle { font-size: 0.75em !important; }
-    .customer-box { background: #f8f9fa !important; border: 1px solid #dadce0 !important; padding: 1mm 2mm !important; font-size: 0.8em !important; line-height: 1.3 !important; }
-    .address-box { background: #ffffff !important; border: 1px solid #dadce0 !important; padding: 1mm 2mm !important; font-size: 0.8em !important; line-height: 1.2 !important; }
+    .header-section { 
+      display: flex !important; 
+      justify-content: space-between !important; 
+      margin-bottom: 2mm !important; 
+      padding-bottom: 1.5mm !important;
+      border-bottom: 2px solid #e0e0e0 !important;
+    }
+    .logo { height: 16mm !important; margin-bottom: 0.8mm !important; }
+    .logo-subtitle { font-size: 0.9em !important; font-weight: 600 !important; }
+    .customer-box { 
+      background: #f8f9fa !important; 
+      border: 2px solid #1e73e8 !important; 
+      padding: 2mm 3mm !important; 
+      font-size: 0.95em !important; 
+      line-height: 1.5 !important; 
+    }
+    .customer-box strong { font-weight: 700 !important; color: #1e3a5f !important; }
+    .address-box { 
+      background: #ffffff !important; 
+      border: 2px solid #dadce0 !important; 
+      padding: 2mm 3mm !important; 
+      font-size: 0.95em !important; 
+      line-height: 1.4 !important; 
+    }
     
-    .main-title { color: #1e3a5f !important; font-size: 1.4em !important; margin: 0 0 0.3mm 0 !important; }
-    .plan-type { color: #f39c12 !important; font-size: 1em !important; margin: 0.2mm 0 !important; }
-    .customer-subtitle { font-size: 0.85em !important; margin-top: 0.3mm !important; }
+    .main-title { color: #1e3a5f !important; font-size: 1.8em !important; margin: 0 0 0.8mm 0 !important; }
+    .plan-type { color: #f39c12 !important; font-size: 1.3em !important; margin: 0.5mm 0 !important; }
+    .customer-subtitle { font-size: 1em !important; font-weight: 700 !important; margin-top: 0.8mm !important; }
     
-    .title-section { margin-bottom: 1mm !important; }
+    .title-section { margin-bottom: 2mm !important; }
     
-    .tour-table th { background: #1e3a5f !important; color: white !important; padding: 0.8mm 0.3mm !important; font-size: 0.65em !important; }
-    .tour-table td { border-right: 1px solid #dadce0 !important; padding: 0.8mm 0.3mm !important; font-size: 0.75em !important; }
+    .tour-table th { 
+      background: #1e3a5f !important; 
+      color: white !important; 
+      padding: 1.5mm 0.5mm !important; 
+      font-size: 0.75em !important; 
+    }
+    .tour-table td { 
+      border-right: 1px solid #dadce0 !important; 
+      padding: 1.5mm 0.5mm !important; 
+      font-size: 0.85em !important; 
+    }
     
-    .tour-section { margin-bottom: 1mm !important; }
+    .tour-section { margin-bottom: 2mm !important; }
     
     .days-grid { 
       gap: 1.2mm !important; 
@@ -444,8 +472,9 @@ HTML_TEMPLATE = """<!doctype html>
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1mm;
-    padding-bottom: 0.5mm;
+    margin-bottom: 2mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 2px solid #e0e0e0;
   }
 
   .header-left {
@@ -455,14 +484,14 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .logo {
-    height: 10mm;
-    margin-bottom: 0.3mm;
+    height: 16mm;
+    margin-bottom: 0.8mm;
   }
 
   .logo-subtitle {
-    font-size: 0.75em;
+    font-size: 0.9em;
     color: #5f6368;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .header-right {
@@ -471,75 +500,75 @@ HTML_TEMPLATE = """<!doctype html>
 
   .customer-box {
     background: #f8f9fa;
-    border: 1px solid #dadce0;
-    border-radius: 3px;
-    padding: 1mm 2mm;
-    font-size: 0.8em;
-    line-height: 1.3;
+    border: 2px solid #1e73e8;
+    border-radius: 4px;
+    padding: 2mm 3mm;
+    font-size: 0.95em;
+    line-height: 1.5;
   }
 
   .customer-box strong {
-    font-weight: 600;
-    color: #2c3e50;
+    font-weight: 700;
+    color: #1e3a5f;
   }
 
   /* === TITLE SECTION === */
   .title-section {
     text-align: center;
-    margin-bottom: 1mm;
+    margin-bottom: 2mm;
   }
 
   .main-title {
-    font-size: 1.4em;
+    font-size: 1.8em;
     font-weight: 900;
     color: #1e3a5f;
-    margin: 0 0 0.3mm 0;
+    margin: 0 0 0.8mm 0;
   }
 
   .plan-type {
-    font-size: 1em;
+    font-size: 1.3em;
     color: #f39c12;
     font-weight: 800;
-    margin: 0.2mm 0;
+    margin: 0.5mm 0;
   }
 
   .customer-subtitle {
-    font-size: 0.85em;
+    font-size: 1em;
     color: #2c3e50;
-    font-weight: 600;
-    margin-top: 0.3mm;
+    font-weight: 700;
+    margin-top: 0.8mm;
   }
 
   /* === ADDRESS BOX === */
   .address-box {
     background: #ffffff;
-    border: 1px solid #dadce0;
-    border-radius: 3px;
-    padding: 1mm 2mm;
-    margin-bottom: 1mm;
-    font-size: 0.8em;
-    line-height: 1.2;
+    border: 2px solid #dadce0;
+    border-radius: 4px;
+    padding: 2mm 3mm;
+    margin-bottom: 2mm;
+    font-size: 0.95em;
+    line-height: 1.4;
     color: #2c3e50;
   }
 
   /* === TOUR SECTION === */
   .tour-section {
-    margin-bottom: 1mm;
+    margin-bottom: 2mm;
   }
 
   .tour-table {
     width: 100%;
     border-collapse: collapse;
     background: #f8f9fa;
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
   }
 
   .tour-table th {
     background: #1e3a5f;
     color: white;
-    padding: 0.8mm 0.3mm;
-    font-size: 0.65em;
+    padding: 1.5mm 0.5mm;
+    font-size: 0.75em;
     font-weight: 700;
     text-align: center;
     border-right: 1px solid rgba(255,255,255,0.2);
@@ -550,10 +579,10 @@ HTML_TEMPLATE = """<!doctype html>
   }
 
   .tour-table td {
-    padding: 0.8mm 0.3mm;
+    padding: 1.5mm 0.5mm;
     text-align: center;
     font-weight: 700;
-    font-size: 0.75em;
+    font-size: 0.85em;
     border-right: 1px solid #dadce0;
     color: #2c3e50;
   }
@@ -800,13 +829,13 @@ if (!ALL_DATA || Object.keys(ALL_DATA).length === 0) {
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
 function render(c){
-  // Erstelle Karten für jeden Tag
+  // Erstelle Karten nur für Tage MIT Lieferungen
   let dayCards = "";
   DAYS.forEach(d => {
     const items = (c.bestell || []).filter(it => it.liefertag === d);
     
+    // Nur Tage MIT Lieferungen anzeigen
     if (items.length > 0) {
-      // Tag hat Lieferungen - blaue Karte
       // Jedes Sortiment mit seiner eigenen Zeit anzeigen
       const itemsHtml = items.map(it => {
         const sortiment = esc(it.sortiment || "");
@@ -829,16 +858,8 @@ function render(c){
             ${itemsHtml}
           </div>
         </div>`;
-    } else {
-      // Tag ohne Lieferungen - graue Karte
-      dayCards += `
-        <div class="day-card inactive">
-          <div class="day-card-header">${d}</div>
-          <div class="day-card-body">
-            <p class="no-delivery">Keine Lieferung</p>
-          </div>
-        </div>`;
     }
+    // Tage OHNE Lieferung werden komplett weggelassen
   });
 
   // Tour-Informationen aufbereiten
