@@ -274,7 +274,7 @@ HTML_TEMPLATE = """<!doctype html>
 <style>
   @page { 
     size: A4 portrait; 
-    margin: 4mm 4mm;
+    margin: 12mm 10mm;
   }
 
   *{ box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
