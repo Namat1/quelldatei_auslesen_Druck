@@ -1,3 +1,9 @@
+# quelldrucksendezeiten_fixed.py
+# -----------------------------------------------------------------------------
+# VERSION: FIXED - Korrekte Sortiment-Zuordnung basierend auf tatsächlichem Namen
+# + LOGO Upload in Streamlit + Logo im Print oben (Base64 eingebettet)
+# -----------------------------------------------------------------------------
+
 import json
 import re
 import datetime
@@ -681,6 +687,29 @@ let DATA = ALL_DATA['direkt'] || {};
 let ORDER = Object.keys(DATA).sort((a,b)=> (Number(a)||0)-(Number(b)||0));
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
+// Debug: Zeige Daten-Status
+console.log("ALL_DATA:", ALL_DATA);
+console.log("Anzahl Bereiche:", Object.keys(ALL_DATA || {}).length);
+console.log("Direkt Kunden:", Object.keys(DATA).length);
+
+// Zeige Hinweis wenn keine Daten
+if (Object.keys(ALL_DATA || {}).length === 0) {
+  document.getElementById("out").innerHTML = `
+    <div style="color:#ea4335; padding:40px; text-align:center; font-size:16px;">
+      <h2>⚠️ Keine Daten gefunden!</h2>
+      <p>Diese HTML-Datei enthält keine Kundendaten.</p>
+      <p><strong>Bitte führen Sie folgende Schritte aus:</strong></p>
+      <ol style="text-align:left; display:inline-block; margin-top:20px;">
+        <li>Starten Sie Streamlit: <code>streamlit run quelldrucksendezeiten.py</code></li>
+        <li>Laden Sie Ihre Excel-Datei hoch</li>
+        <li>Warten Sie, bis die Verarbeitung abgeschlossen ist</li>
+        <li>Klicken Sie auf "Download Sendeplan (A4)"</li>
+        <li>Öffnen Sie die heruntergeladene HTML-Datei</li>
+      </ol>
+    </div>
+  `;
+}
+
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
 function render(c){
@@ -846,6 +875,15 @@ function getAreaName(area){
 }
 
 function updateList(){
+  if (!DATA || Object.keys(DATA).length === 0) {
+    document.getElementById("list").innerHTML = `
+      <div style="padding:20px; text-align:center; color:#9aa0a6; font-size:13px;">
+        <p>Keine Kunden im aktuellen Bereich</p>
+      </div>
+    `;
+    return;
+  }
+  
   document.getElementById("list").innerHTML = ORDER.map(k => {
     const name = (DATA[k] && DATA[k].name) ? DATA[k].name : "";
     return `<div class="item" onclick="document.getElementById('knr').value='${k}';showOne()"><b style="color:#8ab4f8">${k}</b> <span style="color:#5f6368">•</span> <span style="color:#b8b8b8">${esc(name)}</span></div>`;
