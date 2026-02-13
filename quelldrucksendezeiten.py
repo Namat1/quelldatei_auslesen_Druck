@@ -357,14 +357,27 @@ HTML_TEMPLATE = """<!doctype html>
     .day-header { 
       background: #e8eaed !important; 
       color: #2c3e50 !important; 
-      border:none !important;
       font-size:1.05em !important;
       padding:4px 3px !important;
+    }
+    .day-header td {
+      border-top: 2px solid #5f6368 !important;
+      border-left: 2px solid #5f6368 !important;
+      border-right: 2px solid #5f6368 !important;
+    }
+    table.main-table tbody tr:not(.day-header) td {
+      border-left: 2px solid #5f6368 !important;
+      border-right: 2px solid #5f6368 !important;
+    }
+    table.main-table tbody tr:not(.day-header):has(+ .day-header) td {
+      border-bottom: 2px solid #5f6368 !important;
+    }
+    table.main-table tbody tr:last-child:not(.day-header) td {
+      border-bottom: 2px solid #5f6368 !important;
     }
     .tour-table th { background: #e8eaed !important; color: #3c4043 !important; }
     .main-table th { background: #e8eaed !important; color: #3c4043 !important; }
     .main-table tbody tr { background: #ffffff !important; }
-    .main-table td { border:none !important; }
     .pstd { color: #d0192b !important; }
     .ptitle { color: #2c3e50 !important; }
     .head-box { border-bottom-color: #5f6368 !important; font-size:11pt !important; line-height:1.4 !important; }
@@ -416,10 +429,29 @@ HTML_TEMPLATE = """<!doctype html>
   .day-header { 
     background:#e8eaed !important; 
     font-weight:900 !important; 
-    border:none !important;
     color:#2c3e50 !important;
     font-size:1.05em !important;
     padding:4px 3px !important;
+  }
+  
+  /* Rahmen um jeden Tag-Block */
+  .day-header td {
+    border-top: 2px solid #5f6368 !important;
+    border-left: 2px solid #5f6368 !important;
+    border-right: 2px solid #5f6368 !important;
+  }
+  
+  table.main-table tbody tr:not(.day-header) td {
+    border-left: 2px solid #5f6368;
+    border-right: 2px solid #5f6368;
+  }
+  
+  table.main-table tbody tr:not(.day-header):has(+ .day-header) td {
+    border-bottom: 2px solid #5f6368 !important;
+  }
+  
+  table.main-table tbody tr:last-child:not(.day-header) td {
+    border-bottom: 2px solid #5f6368 !important;
   }
 
   .area-buttons {
