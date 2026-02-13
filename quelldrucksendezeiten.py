@@ -827,7 +827,6 @@ function render(c){
     </div>
   </div>`;
 }
-}
 
 function findCustomerInAllAreas(knr){
   // Durchsuche alle Bereiche nach der Kundennummer
